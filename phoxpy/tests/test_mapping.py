@@ -9,7 +9,6 @@
 import datetime
 import unittest
 
-from phoxpy import constants
 from phoxpy import xml
 import phoxpy.mapping as mapping
 
@@ -831,7 +830,7 @@ class MessageTestCase(unittest.TestCase):
         class Post(mapping.Message):
             ids = mapping.ListField(mapping.RefField())
         xmlstr = str(Post(ids=[1, 2, 3]))
-        e = constants.XML_ENCODING
+        e = xml.ENCODING
         self.assertTrue(
             xmlstr.startswith("<?xml version='1.0' encoding='%s'?>\n" % e)
         )

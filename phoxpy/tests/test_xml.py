@@ -8,7 +8,6 @@
 #
 import unittest
 from phoxpy import xml
-from phoxpy import constants
 
 
 class XMLTestsMixIn(object):
@@ -44,7 +43,7 @@ class XMLTestsMixIn(object):
         self.assertEqual(
             xmltext,
             "<?xml version='1.0' encoding='%s'?>\n"
-            '<foo bar="baz" />' % constants.XML_ENCODING
+            '<foo bar="baz" />' % xml.ENCODING
         )
 
     def test_dump_element_with_custom_encoding(self):
@@ -76,7 +75,7 @@ class XMLTestsMixIn(object):
             xmltext,
             "<?xml version='1.0' encoding='%s'?>\n"
             '<!DOCTYPE request SYSTEM "schema.dtd">\n'
-            "<foo />" % constants.XML_ENCODING
+            "<foo />" % xml.ENCODING
         )
 
     def test_load(self):
@@ -144,7 +143,7 @@ class LxmlTestCase(unittest.TestCase, XMLTestsMixIn):
         self.assertEqual(
             xmltext,
             "<?xml version='1.0' encoding='%s'?>\n"
-            '<foo bar="baz"/>' % constants.XML_ENCODING
+            '<foo bar="baz"/>' % xml.ENCODING
         )
 
     def test_dump_element_with_custom_encoding(self):
@@ -162,10 +161,10 @@ class LxmlTestCase(unittest.TestCase, XMLTestsMixIn):
         elem = xml.Element('foo')
         elem.append(xml.Element('bar'))
         elem.append(xml.Element('baz'))
-        xmltext = xml.dump(xml.ElementTree(elem), encoding='Windows-1251')
+        xmltext = xml.dump(xml.ElementTree(elem), encoding='utf-8')
         self.assertEqual(
             xmltext,
-            "<?xml version='1.0' encoding='Windows-1251'?>\n"
+            "<?xml version='1.0' encoding='utf-8'?>\n"
             "<foo><bar/><baz/></foo>"
         )
 
@@ -176,7 +175,7 @@ class LxmlTestCase(unittest.TestCase, XMLTestsMixIn):
             xmltext,
             "<?xml version='1.0' encoding='%s'?>\n"
             '<!DOCTYPE request SYSTEM "schema.dtd">\n'
-            "<foo/>" % constants.XML_ENCODING
+            "<foo/>" % xml.ENCODING
         )
 
 
