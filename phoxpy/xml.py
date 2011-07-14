@@ -22,10 +22,9 @@ one on ImportError exception.
 """
 
 import sys
-from phoxpy.constants import XML_ENCODING
 
 __all__ = ['use', 'Element', 'ElementTree', 'ElementType', 'ElementTreeType',
-           'load', 'dump']
+           'load', 'dump', 'ENCODING']
 
 _using = None
 _initialized = False
@@ -35,6 +34,8 @@ _load = None
 _dump = None
 ElementType = None
 ElementTreeType = None
+ENCODING = 'Windows-1251' # there is 2011 year, but we still have to use
+                          # something not like utf-8
 
 def use(module):
     """Set the XML library that should be used by specifying a known module
@@ -93,7 +94,7 @@ def dump(xmlsrc, doctype=None, encoding=None):
         XML source string.
     """
     if encoding is None:
-        encoding = XML_ENCODING or 'utf-8'
+        encoding = ENCODING or 'utf-8'
     xml_declaration = \
     "<?xml version='1.0' encoding='%s'?>\n" % encoding
     if doctype:
