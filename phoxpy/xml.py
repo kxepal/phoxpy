@@ -17,7 +17,7 @@ This module currently supports the following XML modules:
  - ``cElementTree``: http://effbot.org/zone/celementtree.htm
  - ``elementtree.ElementTree``: http://effbot.org/zone/element-index.htm
 
-By default, modules are tryed to be imported in this order with fallback to next
+By default, modules are tried to be imported in this order with fallback to next
 one on ImportError exception.
 """
 
@@ -82,8 +82,8 @@ def load(s):
 
 @should_initialize_first
 def dump(xmlsrc, doctype=None, encoding=None):
-    """Dump module with very limited
-    support of doctype setting and forced xml declaration definition.
+    """Dump module with very limited support of doctype setting
+    and force xml declaration definition.
 
     Args:
         xmlsrc: ``Element`` or ``ElementTree`` instance.
