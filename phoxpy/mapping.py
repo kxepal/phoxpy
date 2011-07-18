@@ -155,9 +155,12 @@ class Message(Mapping):
         return xml.dump(self.unwrap())
 
     def unwrap(self, root=None):
-        if root is None:
-            root = xml.Element('content')
-        return super(Message, self).unwrap(root)
+        content = xml.Element('content')
+        super(Message, self).unwrap(content)
+        if root is not None:
+            root.append(content)
+            return root
+        return content
 
 
 class BooleanField(Field):

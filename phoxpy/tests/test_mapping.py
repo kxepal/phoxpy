@@ -841,6 +841,14 @@ class MessageTestCase(unittest.TestCase):
         root = Post(ids=[1, 2, 3]).unwrap()
         self.assertEqual(root.tag, 'content')
 
+    def test_unwrap_sets_content_tag(self):
+        class Post(mapping.Message):
+            ids = mapping.ListField(mapping.RefField())
+        foo = xml.Element('foo')
+        root = Post(ids=[1, 2, 3]).unwrap(foo)
+        self.assertEqual(root.tag, 'foo')
+        self.assertEqual(root[0].tag, 'content')
+
 
 if __name__ == '__main__':
     unittest.main()
