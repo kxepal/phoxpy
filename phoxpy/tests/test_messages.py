@@ -28,12 +28,12 @@ class PhoxRequestTestCase(unittest.TestCase):
         self.assertTrue(isinstance(msg, messages.PhoxMessage))
 
     def test_session_id(self):
-        msg = messages.PhoxRequest('foo', session_id='bar')
-        self.assertEqual(msg.session_id, 'bar')
+        msg = messages.PhoxRequest('foo', sessionid='bar')
+        self.assertEqual(msg.sessionid, 'bar')
 
     def test_read_only_session_id(self):
-        msg = messages.PhoxRequest('foo', session_id='bar')
-        self.assertRaises(AttributeError, setattr, msg, 'session_id', 'baz')
+        msg = messages.PhoxRequest('foo', sessionid='bar')
+        self.assertRaises(AttributeError, setattr, msg, 'sessionid', 'baz')
 
     def test_buildnumber(self):
         msg = messages.PhoxRequest('foo', buildnumber='bar')
@@ -52,7 +52,7 @@ class PhoxRequestTestCase(unittest.TestCase):
         self.assertRaises(AttributeError, setattr, msg, 'version', 'baz')
 
     def test_unwrap(self):
-        msg = messages.PhoxRequest('foo', session_id='bar',
+        msg = messages.PhoxRequest('foo', sessionid='bar',
                                    version='baz', buildnumber='zoo')
         data = msg.unwrap()
         self.assertEqual(data.tag, 'phox-request')
@@ -87,12 +87,12 @@ class PhoxResponseTestCase(unittest.TestCase):
         self.assertTrue(isinstance(msg, messages.PhoxMessage))
 
     def test_session_id(self):
-        msg = messages.PhoxResponse(session_id='bar')
-        self.assertEqual(msg.session_id, 'bar')
+        msg = messages.PhoxResponse(sessionid='bar')
+        self.assertEqual(msg.sessionid, 'bar')
 
     def test_read_only_session_id(self):
-        msg = messages.PhoxResponse(session_id='bar')
-        self.assertRaises(AttributeError, setattr, msg, 'session_id', 'baz')
+        msg = messages.PhoxResponse(sessionid='bar')
+        self.assertRaises(AttributeError, setattr, msg, 'sessionid', 'baz')
 
     def test_buildnumber(self):
         msg = messages.PhoxResponse(buildnumber='bar')
@@ -103,11 +103,9 @@ class PhoxResponseTestCase(unittest.TestCase):
         self.assertRaises(AttributeError, setattr, msg, 'buildnumber', 'baz')
 
     def test_unwrap(self):
-        msg = messages.PhoxResponse(session_id='bar',  buildnumber='baz')
+        msg = messages.PhoxResponse(sessionid='bar',  buildnumber='baz')
         data = msg.unwrap()
         self.assertEqual(data.tag, 'phox-response')
-
-        self.assertTrue('type' not in data.attrib)
 
         self.assertTrue('sessionid' in data.attrib)
         self.assertEqual(data.attrib['sessionid'], 'bar')
