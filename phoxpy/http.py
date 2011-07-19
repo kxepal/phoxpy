@@ -25,9 +25,6 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-from phoxpy import exceptions
-from phoxpy import xml
-
 CHUNK_SIZE = 16 * 1024 * 1024
 
 RETRYABLE_ERRORS = frozenset([
