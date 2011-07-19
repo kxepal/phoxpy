@@ -71,7 +71,7 @@ def handle_lis_error(func):
         if error is None:
             return xmldata
         code = error.attrib['code']
-        descr = error.attrib['description']
+        descr = error.attrib.get('description', '')
         raise get_error_class(int(code))(descr.encode('utf-8'))
     wrapper.__name__ = func.__name__
     wrapper.__doc__ = func.__doc__
