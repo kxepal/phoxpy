@@ -13,24 +13,8 @@ from phoxpy.mapping import Message
 
 class PhoxMessage(Message):
     """Base phox message class"""
-    def __init__(self, msgtype, **data):
-        """Initialize PhoxMessage instance.
-
-        Args:
-            msgtype (str): Message type.
-
-        Kwargs:
-            Message fields values.
-        """
-        self._type = msgtype
-        super(PhoxMessage, self).__init__(**data)
-
     def __str__(self):
         raise NotImplementedError('should be implemented for each message type')
-
-    @property
-    def type(self):
-        return self._type
 
 
 class PhoxRequest(PhoxMessage):
@@ -48,14 +32,19 @@ class PhoxRequest(PhoxMessage):
         Kwargs:
             Message fields values.
         """
+        self._type = msgtype
         self._session_id = session_id
         self._buildnumber = buildnumber
         self._version = version
-        super(PhoxRequest, self).__init__(msgtype, **data)
+        super(PhoxRequest, self).__init__(**data)
 
     def __str__(self):
         doctype = ('phox-request', 'SYSTEM', 'phox.dtd')
         return xml.dump(self.unwrap(), doctype=doctype)
+
+    @property
+    def type(self):
+        return self._type
 
     @property
     def session_id(self):
@@ -82,11 +71,10 @@ class PhoxRequest(PhoxMessage):
 
 class PhoxResponse(PhoxMessage):
     """Base phox response message. Used as answer on phox requests messages."""
-    def __init__(self, msgtype, session_id=None, buildnumber=None, **data):
+    def __init__(self, session_id=None, buildnumber=None, **data):
         """Initialize PhoxResponse instance.
 
         Args:
-            msgtype (str): Message type.
             session_id (str): Session id number.
             buildnumber (str): LIS client build number.
 
@@ -95,7 +83,7 @@ class PhoxResponse(PhoxMessage):
         """
         self._session_id = session_id
         self._buildnumber = buildnumber
-        super(PhoxResponse, self).__init__(msgtype, **data)
+        super(PhoxResponse, self).__init__(**data)
 
     def __str__(self):
         doctype = ('phox-response', 'SYSTEM', 'phox.dtd')
@@ -110,7 +98,7 @@ class PhoxResponse(PhoxMessage):
         return self._buildnumber
 
     def unwrap(self):
-        root = xml.Element('phox-response', type=self.type)
+        root = xml.Element('phox-response')
         if self.session_id is not None:
             root.attrib['sessionid'] = self.session_id
         if self.buildnumber is not None:
