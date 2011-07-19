@@ -31,5 +31,17 @@ class ExceptionsTestCase(unittest.TestCase):
             )
         exceptions.handle_lis_error(gen_message)()
 
+    def test_undescriptable_error(self):
+        def gen_message():
+            return xml.load(
+                '<content><error code="500"/></content>'
+            )
+        try:
+            exceptions.handle_lis_error(gen_message)()
+        except Exception, err:
+            self.assertTrue(isinstance(err, exceptions.UnknownUser))
+            self.assertEqual(err.args[0], '')
+
+
 if __name__ == '__main__':
     unittest.main()
