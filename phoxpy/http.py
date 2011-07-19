@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 #
+# Copyright (C) 2009-2011 Christopher Lenz, Dirkjan Ochtman, Matt Goodall
 # Copyright (C) 2011 Alexander Shorin
 # All rights reserved.
 #
