@@ -7,8 +7,11 @@
 # you should have received as part of this distribution.
 #
 
+from random import randint
 from phoxpy import xml
 from phoxpy.mapping import Message
+from phoxpy.mapping import BooleanField, IntegerField, ListField, LongField, \
+                           RefField, TextField
 
 
 class PhoxMessage(Message):
@@ -104,3 +107,53 @@ class PhoxResponse(PhoxMessage):
         if self.buildnumber is not None:
             root.attrib['buildnumber'] = self.buildnumber
         return super(PhoxResponse, self).unwrap(root)
+
+
+class AuthRequest(PhoxRequest):
+    """Authentication request message."""
+    company = TextField(default='')
+    lab = TextField(default='')
+    login = TextField()
+    password = TextField()
+    machine = TextField()
+    client_id = TextField(name='clientId')
+    session_code = IntegerField(name='sessionCode',
+                                default=lambda: randint(10000, 20000))
+    instance_count = IntegerField(name='instanceCount', default=0)
+
+    def __init__(self, *args, **data):
+        super(AuthRequest, self).__init__('login', *args, **data)
+
+    @classmethod
+    def wrap(cls, xmlsrc, **defaults):
+        root = xml.ElementTree(xmlsrc.find('content'))
+        return super(AuthRequest, cls).wrap(root, **defaults)
+
+
+class AuthResponse(PhoxResponse):
+    """Authentication response message."""
+    departments = ListField(RefField())
+    hospitals = ListField(RefField())
+    rights = ListField(RefField())
+    employee = RefField()
+    session_code = LongField(name='sessionCode')
+    server_version = TextField(name='serverVersion')
+    admin_mode = BooleanField(name='adminMode')
+
+    @classmethod
+    def wrap(cls, xmlsrc):
+        attrs = dict(xmlsrc.attrib.items())
+        root = xml.ElementTree(xmlsrc.find('content/o'))
+        return super(AuthResponse, cls).wrap(root, **attrs)
+
+    def unwrap(self):
+        # rewrite phox-response/content/data to phox-response/content/o/data
+        root = super(AuthResponse, self).unwrap()
+        root[0].tag = 'o'
+        newroot = xml.Element(root.tag)
+        newroot.attrib.update(dict(root.attrib.items()))
+        root.attrib.clear()
+        root.tag = 'content'
+        newroot.append(root)
+        return newroot
+
