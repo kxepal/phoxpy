@@ -116,22 +116,16 @@ class Mapping(object):
 
     @classmethod
     def wrap(cls, xmlsrc, **defaults):
-        if not isinstance(xmlsrc, (xml.ElementType, xml.ElementTreeType, dict)):
+        if not isinstance(xmlsrc, (xml.ElementType, xml.ElementTreeType)):
             raise TypeError('Invalid xml data %r' % xmlsrc)
-        if isinstance(xmlsrc, dict):
-            defaults.update(xmlsrc)
         instance = cls(**defaults)
-        if isinstance(xmlsrc, xml.ElementTreeType):
-            for node in xmlsrc.getroot():
-                if not 'n' in node.attrib:
-                    xmlstr = xml.dump(xmlsrc)
-                    raise ValueError('Unnamed field %r\n%s' % (node, xmlstr))
-                instance._data[node.attrib['n']] = node
-        elif isinstance(xmlsrc, xml.ElementType):
-            if not 'n' in xmlsrc.attrib:
+        if isinstance(xmlsrc, xml.ElementType):
+            xmlsrc = xml.ElementTree(xmlsrc)
+        for node in xmlsrc.getroot():
+            if not 'n' in node.attrib:
                 xmlstr = xml.dump(xmlsrc)
                 raise ValueError('Unnamed field %r\n%s' % (xmlsrc, xmlstr))
-            instance._data[xmlsrc.attrib['n']] = xmlsrc
+            instance._data[node.attrib['n']] = node
         return instance
 
     def unwrap(self, root):

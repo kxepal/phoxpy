@@ -126,8 +126,7 @@ class AuthRequest(PhoxRequest):
 
     @classmethod
     def wrap(cls, xmlsrc, **defaults):
-        root = xml.ElementTree(xmlsrc.find('content'))
-        return super(AuthRequest, cls).wrap(root, **defaults)
+        return super(AuthRequest, cls).wrap(xmlsrc.find('content'), **defaults)
 
 
 class AuthResponse(PhoxResponse):
@@ -143,8 +142,7 @@ class AuthResponse(PhoxResponse):
     @classmethod
     def wrap(cls, xmlsrc):
         attrs = dict(xmlsrc.attrib.items())
-        root = xml.ElementTree(xmlsrc.find('content/o'))
-        return super(AuthResponse, cls).wrap(root, **attrs)
+        return super(AuthResponse, cls).wrap(xmlsrc.find('content/o'), **attrs)
 
     def unwrap(self):
         # rewrite phox-response/content/data to phox-response/content/o/data
