@@ -100,13 +100,26 @@ class PhoxResponse(PhoxMessage):
     def buildnumber(self):
         return self._buildnumber
 
+    @classmethod
+    def wrap(cls, xmlsrc):
+        root = xmlsrc.find('content/o')
+        assert root is not None, xml.dump(xmlsrc)
+        attrs = dict(xmlsrc.attrib.items())
+        return super(PhoxResponse, cls).wrap(root, **attrs)
+
     def unwrap(self):
         root = xml.Element('phox-response')
         if self.sessionid is not None:
             root.attrib['sessionid'] = self.sessionid
         if self.buildnumber is not None:
             root.attrib['buildnumber'] = self.buildnumber
-        return super(PhoxResponse, self).unwrap(root)
+        content =  super(PhoxResponse, self).unwrap()
+        if len(content):
+            content.tag = 'o' # content => o
+            content, obj = xml.Element('content'), content
+            content.append(obj)
+        root.append(content)
+        return root
 
 
 class AuthRequest(PhoxRequest):
@@ -138,20 +151,3 @@ class AuthResponse(PhoxResponse):
     session_code = LongField(name='sessionCode')
     server_version = TextField(name='serverVersion')
     admin_mode = BooleanField(name='adminMode')
-
-    @classmethod
-    def wrap(cls, xmlsrc):
-        attrs = dict(xmlsrc.attrib.items())
-        return super(AuthResponse, cls).wrap(xmlsrc.find('content/o'), **attrs)
-
-    def unwrap(self):
-        # rewrite phox-response/content/data to phox-response/content/o/data
-        root = super(AuthResponse, self).unwrap()
-        root[0].tag = 'o'
-        newroot = xml.Element(root.tag)
-        newroot.attrib.update(dict(root.attrib.items()))
-        root.attrib.clear()
-        root.tag = 'content'
-        newroot.append(root)
-        return newroot
-
