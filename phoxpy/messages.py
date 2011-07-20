@@ -61,6 +61,10 @@ class PhoxRequest(PhoxMessage):
     def version(self):
         return self._version
 
+    @classmethod
+    def wrap(cls, xmlsrc, **defaults):
+        return super(PhoxRequest, cls).wrap(xmlsrc.find('content'), **defaults)
+
     def unwrap(self):
         root = xml.Element('phox-request', type=self.type)
         if self.sessionid is not None:
@@ -136,10 +140,6 @@ class AuthRequest(PhoxRequest):
 
     def __init__(self, *args, **data):
         super(AuthRequest, self).__init__('login', *args, **data)
-
-    @classmethod
-    def wrap(cls, xmlsrc, **defaults):
-        return super(AuthRequest, cls).wrap(xmlsrc.find('content'), **defaults)
 
 
 class AuthResponse(PhoxResponse):
