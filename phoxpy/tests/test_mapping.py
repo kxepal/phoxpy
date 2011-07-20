@@ -676,10 +676,12 @@ class MappingTestCase(unittest.TestCase):
     def test_wrap_single_node(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        root = xml.Element('s', n='numbers')
-        root.append(xml.Element('f', v='1'))
-        root.append(xml.Element('f', v='2'))
-        root.append(xml.Element('f', v='3'))
+        root = xml.Element('content')
+        numbers = xml.Element('s', n='numbers')
+        numbers.append(xml.Element('f', v='1'))
+        numbers.append(xml.Element('f', v='2'))
+        numbers.append(xml.Element('f', v='3'))
+        root.append(numbers)
         obj = Dummy.wrap(root)
         self.assertEqual(obj.numbers, [1, 2, 3])
 
@@ -699,26 +701,16 @@ class MappingTestCase(unittest.TestCase):
         self.assertEqual(obj.numbers, [1, 2, 3])
         self.assertEqual(obj.text, 'lorem...')
 
-    def test_wrap_dict(self):
-        class Dummy(mapping.Mapping):
-            numbers = mapping.ListField(mapping.IntegerField())
-            text = mapping.TextField(name='story')
-        data = {
-            'numbers': [1, 2, 3],
-            'text': 'lorem...'
-        }
-        obj = Dummy.wrap(data)
-        self.assertEqual(obj.numbers, [1, 2, 3])
-        self.assertEqual(obj.text, 'lorem...')
-
     def test_wrap_with_defaults(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
             text = mapping.TextField(name='story')
-        root = xml.Element('s', n='numbers')
-        root.append(xml.Element('f', v='1'))
-        root.append(xml.Element('f', v='2'))
-        root.append(xml.Element('f', v='3'))
+        root = xml.Element('content')
+        numbers = xml.Element('s', n='numbers')
+        numbers.append(xml.Element('f', v='1'))
+        numbers.append(xml.Element('f', v='2'))
+        numbers.append(xml.Element('f', v='3'))
+        root.append(numbers)
         data = {
             'text': 'lorem...'
         }
