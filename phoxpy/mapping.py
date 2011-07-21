@@ -143,20 +143,6 @@ class Mapping(object):
         return instance
 
 
-class Message(Mapping):
-
-    def __str__(self):
-        return xml.dump(self.unwrap())
-
-    def unwrap(self, root=None):
-        content = xml.Element('content')
-        super(Message, self).unwrap(content)
-        if root is not None:
-            root.append(content)
-            return root
-        return content
-
-
 class BooleanField(Field):
 
     def to_python(self, node):
