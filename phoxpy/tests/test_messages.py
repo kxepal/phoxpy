@@ -8,13 +8,31 @@
 #
 
 import unittest
+from phoxpy import mapping
 from phoxpy import messages
 from phoxpy import xml
 
-class PhoxMessageTestCase(unittest.TestCase):
 
-    def test_abstract_string_serialization(self):
-        self.assertRaises(NotImplementedError, str, messages.PhoxMessage())
+class MessageTestCase(unittest.TestCase):
+
+    def test_abstract_to_string_serialization(self):
+        class Post(messages.Message):
+            ids = mapping.ListField(mapping.RefField())
+        self.assertRaises(NotImplementedError, str, Post(ids=[1, 2, 3]))
+
+    def test_unwrap_default_tag(self):
+        class Post(messages.Message):
+            ids = mapping.ListField(mapping.RefField())
+        root = Post(ids=[1, 2, 3]).unwrap()
+        self.assertEqual(root.tag, 'content')
+
+    def test_unwrap_sets_content_tag(self):
+        class Post(messages.Message):
+            ids = mapping.ListField(mapping.RefField())
+        foo = xml.Element('foo')
+        root = Post(ids=[1, 2, 3]).unwrap(foo)
+        self.assertEqual(root.tag, 'foo')
+        self.assertEqual(root[0].tag, 'content')
 
 
 class PhoxRequestTestCase(unittest.TestCase):
@@ -25,7 +43,7 @@ class PhoxRequestTestCase(unittest.TestCase):
 
     def test_is_phoxmsg_instance(self):
         msg = messages.PhoxRequest('foo')
-        self.assertTrue(isinstance(msg, messages.PhoxMessage))
+        self.assertTrue(isinstance(msg, messages.Message))
 
     def test_session_id(self):
         msg = messages.PhoxRequest('foo', sessionid='bar')
@@ -84,7 +102,7 @@ class PhoxResponseTestCase(unittest.TestCase):
 
     def test_is_phoxmsg_instance(self):
         msg = messages.PhoxResponse()
-        self.assertTrue(isinstance(msg, messages.PhoxMessage))
+        self.assertTrue(isinstance(msg, messages.Message))
 
     def test_session_id(self):
         msg = messages.PhoxResponse(sessionid='bar')

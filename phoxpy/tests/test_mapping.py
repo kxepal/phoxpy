@@ -816,31 +816,5 @@ class ObjectFieldTestCase(unittest.TestCase):
         self.assertRaises(TypeError, field.to_xml, [1, 2, 42])
 
 
-class MessageTestCase(unittest.TestCase):
-
-    def test_to_string(self):
-        class Post(mapping.Message):
-            ids = mapping.ListField(mapping.RefField())
-        xmlstr = str(Post(ids=[1, 2, 3]))
-        e = xml.ENCODING
-        self.assertTrue(
-            xmlstr.startswith("<?xml version='1.0' encoding='%s'?>\n" % e)
-        )
-
-    def test_unwrap_default_tag(self):
-        class Post(mapping.Message):
-            ids = mapping.ListField(mapping.RefField())
-        root = Post(ids=[1, 2, 3]).unwrap()
-        self.assertEqual(root.tag, 'content')
-
-    def test_unwrap_sets_content_tag(self):
-        class Post(mapping.Message):
-            ids = mapping.ListField(mapping.RefField())
-        foo = xml.Element('foo')
-        root = Post(ids=[1, 2, 3]).unwrap(foo)
-        self.assertEqual(root.tag, 'foo')
-        self.assertEqual(root[0].tag, 'content')
-
-
 if __name__ == '__main__':
     unittest.main()

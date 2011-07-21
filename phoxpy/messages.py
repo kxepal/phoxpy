@@ -9,18 +9,25 @@
 
 from random import randint
 from phoxpy import xml
-from phoxpy.mapping import Message
 from phoxpy.mapping import BooleanField, IntegerField, ListField, LongField, \
-                           RefField, TextField
+                           Mapping, RefField, TextField
 
 
-class PhoxMessage(Message):
+class Message(Mapping):
     """Base phox message class"""
     def __str__(self):
         raise NotImplementedError('should be implemented for each message type')
 
+    def unwrap(self, root=None):
+        content = xml.Element('content')
+        super(Message, self).unwrap(content)
+        if root is not None:
+            root.append(content)
+            return root
+        return content
 
-class PhoxRequest(PhoxMessage):
+
+class PhoxRequest(Message):
     """Base phox request message. Used for data requests."""
     def __init__(self, msgtype, sessionid=None, buildnumber=None, version=None,
                  **data):
@@ -76,7 +83,7 @@ class PhoxRequest(PhoxMessage):
         return super(PhoxRequest, self).unwrap(root)
 
 
-class PhoxResponse(PhoxMessage):
+class PhoxResponse(Message):
     """Base phox response message. Used as answer on phox requests messages."""
     def __init__(self, sessionid=None, buildnumber=None, **data):
         """Initialize PhoxResponse instance.
