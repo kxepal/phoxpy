@@ -99,6 +99,7 @@ class Mapping(object):
         for field in self._fields.values():
             if field.name == key:
                 self._data[key] = field.to_xml(value)
+                break
 
     def __delitem__(self, key):
         self._data[key] = None
