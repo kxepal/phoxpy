@@ -840,6 +840,53 @@ class MappingTestCase(unittest.TestCase):
         )
 
 
+class GenericMappingTestCase(unittest.TestCase):
+
+    def test_setdefault(self):
+        class Dummy(mapping.GenericMapping):
+            foo = mapping.TextField()
+        obj = Dummy()
+        obj.setdefault('baz', 'bar')
+        self.assertEqual(obj['baz'], 'bar')
+
+    def test_add_new_fields_via_constructor(self):
+        obj = mapping.GenericMapping(foo='bar')
+        self.assertTrue(isinstance(obj._fields['foo'], mapping.TextField))
+        self.assertEqual(obj['foo'], 'bar')
+
+    def test_add_new_fields_via_dict_interface(self):
+        class Post(mapping.GenericMapping):
+            foo = mapping.TextField()
+        obj = Post(foo='bar')
+        obj['bar'] = 'baz'
+        self.assertTrue(isinstance(obj._fields['bar'], mapping.TextField))
+        self.assertEqual(obj['bar'], 'baz')
+
+    def test_add_list_field(self):
+        obj = mapping.GenericMapping()
+        obj['foo'] = ['bar', 'baz']
+        self.assertTrue(isinstance(obj._fields['foo'], mapping.ListField))
+        self.assertEqual(obj['foo'], ['bar', 'baz'])
+
+    def test_add_object_field(self):
+        obj = mapping.GenericMapping()
+        obj['foo'] = {'bar': 'baz'}
+        self.assertTrue(isinstance(obj._fields['foo'], mapping.ObjectField))
+        self.assertEqual(obj['foo'], {'bar': 'baz'})
+
+    def test_list_with_text_field_as_default(self):
+        obj = mapping.GenericMapping()
+        obj['foo'] = []
+        self.assertTrue(isinstance(obj._fields['foo'], mapping.ListField))
+        obj['foo'] = ['bar', 'baz']
+        self.assertEqual(obj['foo'], ['bar', 'baz'])
+        self.assertRaises(TypeError, obj.__setitem__, 'foo', [1, 2, 3])
+
+    def test_fail_map_unknown_type(self):
+        obj = mapping.GenericMapping()
+        self.assertRaises(TypeError, obj.__setitem__, 'foo', object())
+        self.assertRaises(TypeError, obj.__setitem__, 'foo', [object()])
+
 
 class ObjectFieldTestCase(unittest.TestCase):
 

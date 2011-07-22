@@ -194,6 +194,63 @@ class Mapping(object):
             self[key] = value
 
 
+class GenericMapping(Mapping):
+
+    def __init__(self, **values):
+        self._fields = dict(self._fields)
+        self._data = {}
+        for fieldname in self._fields:
+            if fieldname in values:
+                setattr(self, fieldname, values.pop(fieldname))
+            elif hasattr(self, fieldname):
+                setattr(self, fieldname, getattr(self, fieldname))
+        for name, value in values.items():
+            self[name] = value
+
+    def __setitem__(self, key, value):
+        try:
+            super(GenericMapping, self).__setitem__(key, value)
+        except KeyError:
+            self._set_field(key, value)
+            super(GenericMapping, self).__setitem__(key, value)
+
+    def _gen_field(self, key, value):
+        fieldcls = FIELDS_BY_PYTYPE.get(type(value), None)
+        if fieldcls is None:
+            raise TypeError('Could not map value %r (%s) to any known field'
+                            '' % (value, type(value)))
+        if fieldcls is ListField:
+            if value:
+                item = value[0]
+                itemfield = FIELDS_BY_PYTYPE.get(type(item), None)
+                if itemfield is None:
+                    raise TypeError('Could not map value %r (%s) to any'
+                                    ' known field' % (item, type(item)))
+            else:
+                itemfield = FIELDS_BY_PYTYPE[str]
+            field = fieldcls(itemfield(), name=key)
+        elif fieldcls is ObjectField:
+            d = {}
+            for key, item in value.items():
+                d[key] = self._gen_field(key, item)
+            field = fieldcls(GenericMapping.build(**d), name=key)
+        else:
+            field = fieldcls(name=key)
+        return field
+
+    def _set_field(self, key, value):
+        field = self._gen_field(key, value)
+        self._fields[key] = field
+        self._data[key] = field.to_xml(value)
+
+    def setdefault(self, key, value):
+        try:
+            super(GenericMapping, self).setdefault(key, value)
+        except KeyError:
+            self._set_field(key, value)
+            super(GenericMapping, self).setdefault(key, value)
+
+
 class BooleanField(Field):
 
     def to_python(self, node):
@@ -491,3 +548,16 @@ class ObjectField(Field):
             root.attrib['n'] = self.name
         self.mapping(**value).unwrap(root)
         return root
+
+
+FIELDS_BY_PYTYPE = {
+    bool: BooleanField,
+    int: IntegerField,
+    long: LongField,
+    float: FloatField,
+    str: TextField,
+    unicode: TextField,
+    datetime.datetime: DateTimeField,
+    list: ListField,
+    dict: ObjectField
+}
