@@ -191,11 +191,14 @@ class Mapping(object):
         if key in self._fields:
             field = self._fields[key]
             field.default = value
+            if self._data[key] is None:
+                self[key] = value
         elif key in self._data:
             for field in self._fields.values():
                 if field.name == key:
                     field.default = value
-                    break
+                    if self._data[key] is None:
+                        self[key] = value
         else:
             raise KeyError('Unknown field %r' % key)
 
