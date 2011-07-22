@@ -91,15 +91,27 @@ class Mapping(object):
             raise ValueError('Unexpected kwargs found: %r' % values)
 
     def __getitem__(self, item):
-        for field in self._fields.values():
-            if field.name == item:
-                return field.to_python(self._data[item])
+        if item in self._fields:
+            field = self._fields[item]
+            return field.to_python(self._data[field.name])
+        elif item in self._data:
+            for field in self._fields.values():
+                if field.name == item:
+                    return field.to_python(self._data[item])
+        else:
+            raise KeyError('Unknown field %r' % item)
 
     def __setitem__(self, key, value):
-        for field in self._fields.values():
-            if field.name == key:
-                self._data[key] = field.to_xml(value)
-                break
+        if key in self._fields:
+            field = self._fields[key]
+            self._data[field.name] = field.to_xml(value)
+        elif key in self._data:
+            for field in self._fields.values():
+                if field.name == key:
+                    self._data[field.name] = field.to_xml(value)
+                    break
+        else:
+            raise KeyError('Unknown field %r' % key)
 
     def __delitem__(self, key):
         self._data[key] = None
