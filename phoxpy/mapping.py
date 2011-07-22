@@ -91,30 +91,16 @@ class Mapping(object):
             raise ValueError('Unexpected kwargs found: %r' % values)
 
     def __getitem__(self, item):
-        if item in self._fields:
-            field = self._fields[item]
-            return field.to_python(self._data[field.name])
-        elif item in self._data:
-            for field in self._fields.values():
-                if field.name == item:
-                    return field.to_python(self._data[item])
-        else:
-            raise KeyError('Unknown field %r' % item)
+        field = self._get_field(item)
+        return field.to_python(self._data[field.name])
 
     def __setitem__(self, key, value):
-        if key in self._fields:
-            field = self._fields[key]
-            self._data[field.name] = field.to_xml(value)
-        elif key in self._data:
-            for field in self._fields.values():
-                if field.name == key:
-                    self._data[field.name] = field.to_xml(value)
-                    break
-        else:
-            raise KeyError('Unknown field %r' % key)
+        field = self._get_field(key)
+        self._data[field.name] = field.to_xml(value)
 
     def __delitem__(self, key):
-        self._data[key] = None
+        field = self._get_field(key)
+        self._data[field.name] = None
 
     def __lt__(self, other):
         return self._to_python() < other
@@ -136,6 +122,16 @@ class Mapping(object):
 
     def _to_python(self):
         return dict(self.items())
+
+    def _get_field(self, key):
+        if key in self._fields:
+            return self._fields[key]
+        elif key in self._data:
+            for field in self._fields.values():
+                if field.name == key:
+                    return field
+        else:
+            raise KeyError('Unknown field %r' % key)
 
     @classmethod
     def build(cls, **d):
@@ -188,24 +184,14 @@ class Mapping(object):
         return izip(self.keys(), self.values())
 
     def setdefault(self, key, value):
-        if key in self._fields:
-            field = self._fields[key]
-            field.default = value
-            if self._data[key] is None:
-                self[key] = value
-        elif key in self._data:
-            for field in self._fields.values():
-                if field.name == key:
-                    field.default = value
-                    if self._data[key] is None:
-                        self[key] = value
-        else:
-            raise KeyError('Unknown field %r' % key)
+        field = self._get_field(key)
+        field.default = value
+        if self._data[key] is None:
+            self[key] = value
 
     def update(self, data):
         for key, value in data.items():
             self[key] = value
-
 
 
 class BooleanField(Field):
