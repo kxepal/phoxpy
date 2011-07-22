@@ -12,7 +12,7 @@
 """Mapping from raw XML data structures to Python objects and vice versa."""
 import copy
 import datetime
-from itertools import repeat
+from itertools import repeat, izip
 from phoxpy import xml
 
 __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
@@ -116,6 +116,27 @@ class Mapping(object):
     def __delitem__(self, key):
         self._data[key] = None
 
+    def __lt__(self, other):
+        return self._to_python() < other
+
+    def __le__(self, other):
+        return self._to_python() <= other
+
+    def __eq__(self, other):
+        return self._to_python() == other
+
+    def __ne__(self, other):
+        return self._to_python() != other
+
+    def __ge__(self, other):
+        return self._to_python() >= other
+
+    def __gt__(self, other):
+        return self._to_python() > other
+
+    def _to_python(self):
+        return dict(self.items())
+
     @classmethod
     def build(cls, **d):
         fields = {}
@@ -154,6 +175,34 @@ class Mapping(object):
         for name, node in self._data.items():
             instance._data[name] = copy.deepcopy(node)
         return instance
+
+    def keys(self):
+        for key in self._data:
+            yield key
+
+    def values(self):
+        for key in self._data:
+            yield self[key]
+
+    def items(self):
+        return izip(self.keys(), self.values())
+
+    def setdefault(self, key, value):
+        if key in self._fields:
+            field = self._fields[key]
+            field.default = value
+        elif key in self._data:
+            for field in self._fields.values():
+                if field.name == key:
+                    field.default = value
+                    break
+        else:
+            raise KeyError('Unknown field %r' % key)
+
+    def update(self, data):
+        for key, value in data.items():
+            self[key] = value
+
 
 
 class BooleanField(Field):
