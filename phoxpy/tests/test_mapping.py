@@ -625,6 +625,13 @@ class MappingTestCase(unittest.TestCase):
         obj = Dummy(field='hello')
         self.assertEqual(obj['foo'], 'hello')
 
+    def test_getitem_default_value_with_custom_name(self):
+        class Dummy(mapping.Mapping):
+            field = mapping.Field(name='foo', default='bar')
+        obj = Dummy()
+        self.assertEqual(obj['field'], 'bar')
+        self.assertEqual(obj['foo'], 'bar')
+
     def test_getitem_unknown_name(self):
         self.assertRaises(KeyError, mapping.Mapping().__getitem__, 'foo')
 
@@ -802,6 +809,36 @@ class MappingTestCase(unittest.TestCase):
         items = obj.items()
         self.assertTrue(hasattr(items, 'next'))
         self.assertEqual(list(items), [('foo', 'bar')])
+
+    def test_setdefault(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField()
+        obj = Dummy()
+        obj.setdefault('foo', 'bar')
+        self.assertEqual(obj.foo, 'bar')
+
+    def test_setdefault_custom_name(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField(name='baz')
+        obj = Dummy()
+        obj.setdefault('baz', 'bar')
+        self.assertEqual(obj.foo, 'bar')
+        self.assertEqual(obj['baz'], 'bar')
+
+    def test_update(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField()
+            bar = mapping.ListField(mapping.IntegerField())
+            baz = mapping.ObjectField(mapping.Mapping.build(
+                zoo = mapping.TextField()
+            ))
+        obj = Dummy()
+        obj.update(dict(foo='foo', bar=[42], baz={'zoo': 'boo'}))
+        self.assertEqual(
+            sorted(list(obj.values())),
+            sorted(['foo', [42], {'zoo': 'boo'}])
+        )
+
 
 
 class ObjectFieldTestCase(unittest.TestCase):
