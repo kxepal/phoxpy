@@ -770,6 +770,39 @@ class MappingTestCase(unittest.TestCase):
         tree = xml.ElementTree(root)
         self.assertRaises(ValueError, Dummy.wrap, tree)
 
+    def test_keys(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField()
+            bar = mapping.ListField(mapping.IntegerField())
+            baz = mapping.ObjectField(mapping.Mapping.build())
+        obj = Dummy()
+        keys = obj.keys()
+        self.assertTrue(hasattr(keys, 'next'))
+        self.assertEqual(sorted(list(keys)), sorted(['foo', 'bar', 'baz']))
+
+    def test_values(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField()
+            bar = mapping.ListField(mapping.IntegerField())
+            baz = mapping.ObjectField(mapping.Mapping.build(
+                zoo = mapping.TextField()
+            ))
+        obj = Dummy(foo='foo', bar=[42], baz={'zoo': 'boo'})
+        values = obj.values()
+        self.assertTrue(hasattr(values, 'next'))
+        self.assertEqual(
+            sorted(list(values)),
+            sorted(['foo', [42], {'zoo': 'boo'}])
+        )
+
+    def test_items(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField(default='bar')
+        obj = Dummy()
+        items = obj.items()
+        self.assertTrue(hasattr(items, 'next'))
+        self.assertEqual(list(items), [('foo', 'bar')])
+
 
 class ObjectFieldTestCase(unittest.TestCase):
 
