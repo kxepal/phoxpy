@@ -8,9 +8,10 @@
 #
 import datetime
 import unittest
+from operator import itemgetter
 
 from phoxpy import xml
-import phoxpy.mapping as mapping
+from phoxpy import mapping
 
 
 class FieldTestCase(unittest.TestCase):
@@ -623,6 +624,12 @@ class MappingTestCase(unittest.TestCase):
             field = mapping.Field(name='foo')
         obj = Dummy(field='hello')
         self.assertEqual(obj['foo'], 'hello')
+
+    def test_getitem_unknown_name(self):
+        self.assertRaises(KeyError, mapping.Mapping().__getitem__, 'foo')
+
+    def test_setitem_unknown_name(self):
+        self.assertRaises(KeyError, mapping.Mapping().__setitem__, 'foo', 'bar')
 
     def test_setitem(self):
         class Dummy(mapping.Mapping):
