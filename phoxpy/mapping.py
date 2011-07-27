@@ -20,7 +20,14 @@ __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
            'Mapping']
 
 class Field(object):
+    """Base field class.
 
+    :param name: Field custom name.
+    :type name: str
+
+    :param default: Field default value if nothing was setted.
+    :type default: unicode
+    """
     def __init__(self, name=None, default=None):
         self.name = name
         self.default = default
@@ -44,9 +51,39 @@ class Field(object):
         instance._data[self.name] = value
 
     def to_python(self, node):
+        """xml element => unicode
+
+        :param node: XML element. Should contains ``v`` attribute.
+        :type node: :class:`~phoxpy.xml.Element`
+
+        :return: Node attribute ``v`` value as is.
+        :rtype: unicode
+
+        >>> field = Field(name='foo')
+        >>> elem = xml.Element('foo', v='bar')
+        >>> field.to_python(elem)
+        'bar'
+        """
         return node.attrib['v']
 
     def to_xml(self, value):
+        """unicode => xml element
+
+        :param value: Unicode or utf-8 encoded string.
+        :type value: basestring
+
+        :return: XML element instance.
+        :rtype: :class:`~phoxpy.xml.Element`
+
+        >>> field = Field(name='foo')
+        >>> elem = field.to_xml('bar')
+        >>> elem.tag
+        'f'
+        >>> elem.attrib['n']
+        'foo'
+        >>> elem.attrib['v']
+        'bar'
+        """
         if not isinstance(value, basestring):
             raise TypeError('Unicode value excepted, got %r' % value)
         if not isinstance(value, unicode):
@@ -78,6 +115,28 @@ class MetaMapping(type):
 
 
 class Mapping(object):
+    """Base class to construct complex data mappings.
+
+    :param values: Keyword arguments mapped by fields.
+    :type values: dict
+
+    :raises: :exc:`ValueError`: If no fields available to assign passed value.
+
+    >>> class Post(Mapping):
+    ...   foo = TextField()
+    ...   bar = IntegerField()
+    ...   baz = BooleanField(default=False)
+    >>> post = Post(foo='zoo', bar=42)
+    >>> post.foo
+    'zoo'
+    >>> post['bar'] == post.bar == 42
+    True
+    >>> post.baz
+    False
+    >>> post['baz'] = True
+    >>> post.baz
+    True
+    """
     __metaclass__ = MetaMapping
 
     def __init__(self, **values):
@@ -135,6 +194,7 @@ class Mapping(object):
 
     @classmethod
     def build(cls, **d):
+        """Creates AnonymousMapping type with specified fields."""
         fields = {}
         for attrname, attrval in d.items():
             if not attrval.name:
@@ -146,6 +206,9 @@ class Mapping(object):
 
     @classmethod
     def wrap(cls, xmlsrc, **defaults):
+        """Wrap :class:`~phoxpy.xml.Element` or :class:`~phoxpy.xml.ElementTree`
+        instance and map elements to related fields by name.
+        """
         if not isinstance(xmlsrc, (xml.ElementType, xml.ElementTreeType)):
             raise TypeError('Invalid xml data %r' % xmlsrc)
         instance = cls(**defaults)
@@ -159,6 +222,11 @@ class Mapping(object):
         return instance
 
     def unwrap(self, root):
+        """Unwraps mapping instance to XML object.
+
+        :param root: Root xml node.
+        :type root: :class:`~phoxpy.xml.Element`
+        """
         for node in self._data.values():
             if isinstance(node, Mapping):
                 root.append(node.unwrap())
@@ -167,35 +235,62 @@ class Mapping(object):
         return root
 
     def copy(self):
+        """Creates a shallow copy of mapping."""
         instance = type(self)()
         for name, node in self._data.items():
             instance._data[name] = copy.deepcopy(node)
         return instance
 
     def keys(self):
+        """Iterate over field names."""
         for key in self._data:
             yield key
 
     def values(self):
+        """Iterate over field values."""
         for key in self._data:
             yield self[key]
 
     def items(self):
+        """Iterate over field (name, value) pairs."""
         return izip(self.keys(), self.values())
 
     def setdefault(self, key, value):
+        """Sets default value to specified field by name.
+
+        :param key: Field name
+        :type key: str
+
+        :param value: Field valid value.
+
+        :raises:
+            :exc:`KeyError`: If field not found by `key` argument.
+        """
         field = self._get_field(key)
         field.default = value
         if self._data[key] is None:
             self[key] = value
 
     def update(self, data):
+        """Batch update fields data."""
         for key, value in data.items():
             self[key] = value
 
 
 class GenericMapping(Mapping):
+    """Generic mapping provides more flexible scheme construction
+    with on fly field creation.
 
+    >>> class Post(GenericMapping):
+    ...   pass
+    >>> post = Post(foo='zoo', bar=42, baz=False)
+    >>> post['foo']
+    'zoo'
+    >>> post['bar']
+    42
+    >>> post['baz']
+    False
+    """
     def __init__(self, **values):
         self._fields = dict(self._fields)
         self._data = {}
@@ -242,14 +337,35 @@ class GenericMapping(Mapping):
         self._data[key] = field.to_xml(value)
 
     def setdefault(self, key, value):
+        """Sets default value to specified field by name."""
         if not (key in self._fields or key in self._data):
             self._set_field(key, value)
         super(GenericMapping, self).setdefault(key, value)
 
 
 class BooleanField(Field):
-
+    """Mapping field for boolean values."""
     def to_python(self, node):
+        """xml element => bool
+
+        :param node: XML element. Should contains ``v`` attribute.
+        :type node: :class:`~phoxpy.xml.Element`
+
+        :return: ``True`` for `true` attribute value or ``False`` for `false`.
+        :rtype: bool
+
+        :raises:
+            :exc:`ValueError`: If ``v`` attribute value couldn't be decoded
+            to ``bool``.
+
+        >>> field = BooleanField()
+        >>> elem = xml.Element('foo', v='false')
+        >>> field.to_python(elem)
+        False
+        >>> elem = xml.Element('foo', v='true')
+        >>> field.to_python(elem)
+        True
+        """
         value = node.attrib['v']
         if value == 'true':
             return True
@@ -258,6 +374,24 @@ class BooleanField(Field):
         raise ValueError(value)
 
     def to_xml(self, value):
+        """bool => xml element
+
+        :param value: Boolean value.
+        :type value: bool
+
+        :return: XML element instance.
+        :rtype: :class:`~phoxpy.xml.Element`
+
+        >>> field = BooleanField()
+        >>> elem = field.to_xml(False)
+        >>> elem.attrib['t']
+        'B'
+        >>> elem.attrib['v']
+        'false'
+        >>> elem = field.to_xml(True)
+        >>> elem.attrib['v']
+        'true'
+        """
         if not isinstance(value, bool):
             raise TypeError('Boolean value expected, got %r' % value)
         elem = super(BooleanField, self).to_xml('true' if value else 'false')
@@ -266,11 +400,39 @@ class BooleanField(Field):
 
 
 class IntegerField(Field):
-
+    """Mapping field for integer values."""
     def to_python(self, node):
+        """xml element => int
+
+        :param node: XML element. Should contains ``v`` attribute.
+        :type node: :class:`~phoxpy.xml.Element`
+
+        :return: Integer value.
+        :rtype: int
+
+        >>> field = IntegerField()
+        >>> elem = xml.Element('foo', v='42')
+        >>> field.to_python(elem)
+        42
+        """
         return int(node.attrib['v'])
 
     def to_xml(self, value):
+        """int => xml element
+
+        :param value: Integer value.
+        :type value: int
+
+        :return: XML element instance.
+        :rtype: :class:`~phoxpy.xml.Element`
+
+        >>> field = IntegerField()
+        >>> elem = field.to_xml(42)
+        >>> elem.attrib['t']
+        'I'
+        >>> elem.attrib['v']
+        '42'
+        """
         if not isinstance(value, int):
             raise TypeError('Integer value expected, got %r' % value)
         elem = super(IntegerField, self).to_xml(str(value))
@@ -279,11 +441,39 @@ class IntegerField(Field):
 
 
 class LongField(Field):
-
+    """Mapping field for long integer values."""
     def to_python(self, node):
+        """xml element => long
+
+        :param node: XML element. Should contains ``v`` attribute.
+        :type node: :class:`~phoxpy.xml.Element`
+
+        :return: Long integer value.
+        :rtype: long
+
+        >>> field = LongField()
+        >>> elem = xml.Element('foo', v='100500')
+        >>> field.to_python(elem)
+        100500L
+        """
         return long(node.attrib['v'])
 
     def to_xml(self, value):
+        """int or long => xml element
+
+        :param value: Integer or long integer value.
+        :type value: int or long
+
+        :return: XML element instance.
+        :rtype: :class:`~phoxpy.xml.Element`
+
+        >>> field = LongField()
+        >>> elem = field.to_xml(100500L)
+        >>> elem.attrib['t']
+        'L'
+        >>> elem.attrib['v']
+        '100500'
+        """
         if not isinstance(value, (int, long)):
             raise TypeError('Integer or long value expected, got %r' % value)
         elem = super(LongField, self).to_xml(str(value).rstrip('L'))
@@ -292,12 +482,39 @@ class LongField(Field):
 
 
 class FloatField(Field):
-
+    """Mapping field for float values."""
     def to_python(self, node):
-        """Returns """
+        """xml element => float
+
+        :param node: XML element. Should contains ``v`` attribute.
+        :type node: :class:`~phoxpy.xml.Element`
+
+        :return: Float value.
+        :rtype: float
+
+        >>> field = FloatField()
+        >>> elem = xml.Element('foo', v='3.14')
+        >>> print round(field.to_python(elem), 2)
+        3.14
+        """
         return float(node.attrib['v'])
 
     def to_xml(self, value):
+        """float => xml element
+
+        :param value: Float value.
+        :type value: float
+
+        :return: XML element instance.
+        :rtype: :class:`~phoxpy.xml.Element`
+
+        >>> field = FloatField()
+        >>> elem = field.to_xml(3.14)
+        >>> elem.attrib['t']
+        'F'
+        >>> elem.attrib['v']
+        '3.14'
+        """
         if not isinstance(value, float):
             raise TypeError('Float value expected, got %r' % value)
         elem = super(FloatField, self).to_xml(str(value))
@@ -306,15 +523,43 @@ class FloatField(Field):
 
 
 class TextField(Field):
-
+    """Mapping field for string values."""
     def __init__(self, encoding=None, name=None, default=None):
         self.encoding = encoding
         super(TextField, self).__init__(name, default)
 
     def to_python(self, node):
+        """xml element => unicode
+
+        :param node: XML element. Should contains ``v`` attribute.
+        :type node: :class:`~phoxpy.xml.Element`
+
+        :return: Node attribute ``v`` value as is.
+        :rtype: unicode
+
+        >>> field = TextField()
+        >>> elem = xml.Element('foo', v='bar')
+        >>> field.to_python(elem)
+        'bar'
+        """
         return node.attrib['v']
 
     def to_xml(self, value):
+        """unicode => xml element
+
+        :param value: Unicode or utf-8 encoded string.
+        :type value: basestring
+
+        :return: XML element instance.
+        :rtype: :class:`~phoxpy.xml.Element`
+
+        >>> field = TextField()
+        >>> elem = field.to_xml('bar')
+        >>> elem.attrib['t']
+        'S'
+        >>> elem.attrib['v']
+        'bar'
+        """
         if not isinstance(value, basestring):
             raise TypeError('String value expected, got %r' % value)
         elem = super(TextField, self).to_xml(value)
@@ -323,15 +568,43 @@ class TextField(Field):
 
 
 class DateTimeField(Field):
-
+    """Mapping field for storing date/time values."""
     def __init__(self, fmt=None, name=None, default=None):
         self.format = fmt or '%d.%m.%Y %H:%M:%S'
         super(DateTimeField, self).__init__(name, default)
 
     def to_python(self, node):
+        """xml element => datetime
+
+        :param node: XML element. Should contains ``v`` attribute.
+        :type node: :class:`~phoxpy.xml.Element`
+
+        :return: Python datetime object.
+        :rtype: :class:`datetime.datetime`
+
+        >>> field = DateTimeField()
+        >>> elem = xml.Element('foo', v='14.02.2010 02:31:30')
+        >>> field.to_python(elem)
+        datetime.datetime(2010, 2, 14, 2, 31, 30)
+        """
         return datetime.datetime.strptime(node.attrib['v'], self.format)
 
     def to_xml(self, value):
+        """datetime => xml element
+
+        :param value: Python datetime object.
+        :type value: :class:`datetime.datetime`
+
+        :return: XML element instance.
+        :rtype: :class:`~phoxpy.xml.Element`
+
+        >>> field = DateTimeField()
+        >>> elem = field.to_xml(datetime.datetime(2010, 2, 14, 2, 31, 30))
+        >>> elem.attrib['t']
+        'D'
+        >>> elem.attrib['v']
+        '14.02.2010 02:31:30'
+        """
         if not isinstance(value, datetime.datetime):
             raise TypeError('Datetime value expected, got %r' % value)
         elem = super(DateTimeField, self).to_xml(value.strftime(self.format))
@@ -340,11 +613,39 @@ class DateTimeField(Field):
 
 
 class RefField(Field):
-
+    """Mapping field for storing object reference ids."""
     def to_python(self, node):
+        """xml element => int
+
+        :param node: XML element. Should contains ``v`` attribute.
+        :type node: :class:`~phoxpy.xml.Element`
+
+        :return: Integer value.
+        :rtype: int
+
+        >>> field = RefField()
+        >>> elem = xml.Element('foo', i='42')
+        >>> field.to_python(elem)
+        42
+        """
         return int(node.attrib['i'])
 
     def to_xml(self, value):
+        """int => xml element
+
+        :param value: Integer value.
+        :type value: int
+
+        :return: XML element instance.
+        :rtype: :class:`~phoxpy.xml.Element`
+
+        >>> field = RefField()
+        >>> elem = field.to_xml(42)
+        >>> elem.tag
+        'r'
+        >>> elem.attrib['i']
+        '42'
+        """
         if not isinstance(value, int):
             raise TypeError('Integer value expected, got %r' % value)
         elem = xml.Element('r')
@@ -355,7 +656,11 @@ class RefField(Field):
 
 
 class ListField(Field):
+    """Field type for sequences of other fields.
 
+    :param field: Sequence item field instance.
+    :type field: :class:`~phoxpy.mapping.Field`
+    """
     class Proxy(list):
         def __init__(self, seq, field):
             list.__init__(self, seq)
@@ -407,7 +712,7 @@ class ListField(Field):
 
         def __ge__(self, other):
             return self._to_python() >= other
-    
+
         def __gt__(self, other):
             return self._to_python() > other
 
@@ -474,15 +779,14 @@ class ListField(Field):
                     self.append(item)
 
         def index(self, value, start=None, stop=None):
-            start = start or 0
             for idx, node in enumerate(islice(self.list, start, stop)):
                 if self.field.to_python(node) == value:
-                    return idx + start
+                    return idx
             else:
                 raise ValueError('%r not in list' % value)
 
-        def insert(self, idx, item):
-            self.list.insert(idx, self.field.to_xml(item))
+        def insert(self, index, object):
+            self.list.insert(index, self.field.to_xml(object))
 
         def remove(self, value):
             for node in self.list:
@@ -502,15 +806,57 @@ class ListField(Field):
             for i in vals:
                 self.append(i)
 
+        # update docstrings from list
+        for item in dir():
+            if getattr(list, item, None) is None \
+                or item in ['__module__', '__doc__']:
+                continue
+            func = eval(item)
+            func.__doc__ = getattr(list, item).__doc__
+        del func, item
+
     def __init__(self, field, name=None, default=None):
         default = default or []
         self.field = field
         super(ListField, self).__init__(name, default)
 
     def to_python(self, node):
+        """Converts XML element to list-like object.
+
+        :param node: XML element.
+        :type node: :class:`~phoxpy.xml.Element`
+
+        :return: List-like object.
+        :rtype: :class:`~phoxpy.mapping.ListField.Proxy`
+
+        >>> field = ListField(IntegerField())
+        >>> elem = xml.Element('s')
+        >>> elem.append(xml.Element('f', v='1'))
+        >>> elem.append(xml.Element('f', v='2'))
+        >>> elem.append(xml.Element('f', v='3'))
+        >>> res = field.to_python(elem)
+        >>> res[0]
+        1
+        >>> res
+        [1, 2, 3]
+        """
         return self.Proxy(node, self.field)
 
     def to_xml(self, value):
+        """Converts Python iterable object to XML element.
+
+        :param value: Iterable object.
+
+        :return: XML element instance.
+        :rtype: :class:`~phoxpy.xml.Element`
+
+        >>> field = ListField(IntegerField())
+        >>> elem = field.to_xml([1, 2, 3])
+        >>> elem.tag
+        's'
+        >>> elem[0].attrib['v'], elem[1].attrib['v'], elem[2].attrib['v']
+        ('1', '2', '3')
+        """
         try:
             iter(value)
         except TypeError:
@@ -524,7 +870,7 @@ class ListField(Field):
 
 
 class ObjectField(Field):
-
+    """Field type for nested objects in Mapping form."""
     def __init__(self, mapping, name=None, default=None):
         default = default or {}
         if isinstance(mapping, dict):
@@ -546,7 +892,7 @@ class ObjectField(Field):
         self.mapping(**value).unwrap(root)
         return root
 
-
+#: Mapping between Python types and Field classes.
 FIELDS_BY_PYTYPE = {
     bool: BooleanField,
     int: IntegerField,
