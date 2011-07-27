@@ -120,6 +120,8 @@ class PhoxResponse(Message):
     @classmethod
     def wrap(cls, xmlsrc):
         root = xmlsrc.find('content/o')
+        if root is None:
+            root = xmlsrc.find('content')
         assert root is not None, xml.dump(xmlsrc)
         attrs = dict(xmlsrc.attrib.items())
         return super(PhoxResponse, cls).wrap(root, **attrs)
