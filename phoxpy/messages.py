@@ -10,13 +10,13 @@
 from random import randint
 from phoxpy import xml
 from phoxpy.mapping import BooleanField, IntegerField, ListField, LongField, \
-                           Mapping, RefField, TextField
+                           GenericMapping, RefField, TextField
 
 
 __all__ = ['Message', 'PhoxRequest', 'PhoxResponse',
            'AuthRequest', 'AuthResponse']
 
-class Message(Mapping):
+class Message(GenericMapping):
     """Base communication message mapping."""
     def __str__(self):
         raise NotImplementedError('Should be implemented for each message type')
