@@ -779,9 +779,10 @@ class ListField(Field):
                     self.append(item)
 
         def index(self, value, start=None, stop=None):
+            start = start or 0
             for idx, node in enumerate(islice(self.list, start, stop)):
                 if self.field.to_python(node) == value:
-                    return idx
+                    return idx + start
             else:
                 raise ValueError('%r not in list' % value)
 
