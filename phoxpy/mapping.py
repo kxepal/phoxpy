@@ -17,7 +17,7 @@ from phoxpy import xml
 
 __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
            'TextField', 'DateTimeField', 'RefField', 'ListField', 'ObjectField',
-           'Mapping', 'Message']
+           'Mapping']
 
 class Field(object):
 
