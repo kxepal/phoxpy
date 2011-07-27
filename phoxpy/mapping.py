@@ -208,11 +208,9 @@ class GenericMapping(Mapping):
             self[name] = value
 
     def __setitem__(self, key, value):
-        try:
-            super(GenericMapping, self).__setitem__(key, value)
-        except KeyError:
+        if not (key in self._fields or key in self._data):
             self._set_field(key, value)
-            super(GenericMapping, self).__setitem__(key, value)
+        super(GenericMapping, self).__setitem__(key, value)
 
     def _gen_field(self, key, value):
         fieldcls = FIELDS_BY_PYTYPE.get(type(value), None)
@@ -244,11 +242,9 @@ class GenericMapping(Mapping):
         self._data[key] = field.to_xml(value)
 
     def setdefault(self, key, value):
-        try:
-            super(GenericMapping, self).setdefault(key, value)
-        except KeyError:
+        if not (key in self._fields or key in self._data):
             self._set_field(key, value)
-            super(GenericMapping, self).setdefault(key, value)
+        super(GenericMapping, self).setdefault(key, value)
 
 
 class BooleanField(Field):
