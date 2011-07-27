@@ -403,11 +403,23 @@ class ListFieldTestCase(unittest.TestCase):
         obj = Dummy(numbers=[1.0, 2.0, 2.5])
         self.assertEqual(0, obj.numbers.index(1.0))
 
+    def test_proxy_index_range(self):
+        class Dummy(mapping.Mapping):
+            numbers = mapping.ListField(mapping.FloatField())
+        obj = Dummy(numbers=[1.0, 2.0, 2.5])
+        self.assertEqual(1, obj.numbers.index(2.0, 1, 2))
+
     def test_fail_proxy_index_for_nonexisted_element(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.FloatField())
         obj = Dummy(numbers=[1.0, 2.0, 2.5])
         self.assertRaises(ValueError, obj.numbers.index, 5.0)
+
+    def test_fail_proxy_index_negative_start(self):
+        class Dummy(mapping.Mapping):
+            numbers = mapping.ListField(mapping.FloatField())
+        obj = Dummy(numbers=[1.0, 2.0, 2.5])
+        self.assertRaises(ValueError, obj.numbers.index, 2.0, -1 ,3)
 
     def test_proxy_insert(self):
         class Dummy(mapping.Mapping):

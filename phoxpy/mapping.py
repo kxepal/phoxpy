@@ -12,7 +12,7 @@
 """Mapping from raw XML data structures to Python objects and vice versa."""
 import copy
 import datetime
-from itertools import repeat, izip
+from itertools import repeat, islice, izip
 from phoxpy import xml
 
 __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
@@ -477,12 +477,13 @@ class ListField(Field):
                 for item in other:
                     self.append(item)
 
-        def index(self, item):
-            for idx, node in enumerate(self.list):
-                if self.field.to_python(node) == item:
-                    return idx
+        def index(self, value, start=None, stop=None):
+            start = start or 0
+            for idx, node in enumerate(islice(self.list, start, stop)):
+                if self.field.to_python(node) == value:
+                    return idx + start
             else:
-                raise ValueError('%r not in list' % item)
+                raise ValueError('%r not in list' % value)
 
         def insert(self, idx, item):
             self.list.insert(idx, self.field.to_xml(item))
