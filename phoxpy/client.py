@@ -10,7 +10,8 @@
 from phoxpy import xml
 from phoxpy.exceptions import handle_lis_error
 from phoxpy.http import Resource
-from phoxpy.messages import Message, PhoxRequest, AuthRequest, AuthResponse
+from phoxpy.messages import Message, PhoxRequest, PhoxResponse,\
+                            AuthRequest, AuthResponse
 
 
 __all__ = ['PhoxResource', 'Session']
@@ -97,8 +98,8 @@ class Session(object):
         :return: self
         """
         self._resource = PhoxResource(url, session=http_session)
-        status, headers, data = self.request('', self._reqmsg)
-        self._resmsg = AuthResponse.wrap(data)
+        response = self.request('', self._reqmsg)
+        self._resmsg = AuthResponse.wrap(response.unwrap())
         return self
 
     def request(self, path, data, headers=None, **params):
@@ -118,7 +119,9 @@ class Session(object):
         :return: Response message.
         :rtype: :class:`~phoxpy.messages.PhoxResponse`
         """
-        return self._resource.post_xml(path, data, headers, **params)
+        return PhoxResponse.wrap(
+            self._resource.post_xml(path, data, headers, **params)[2]
+        )
 
     def close(self):
         """Closes current active session."""
