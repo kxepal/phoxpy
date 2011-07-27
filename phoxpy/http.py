@@ -25,8 +25,16 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+__all__ = [
+    'CHUNK_SIZE', 'RETRYABLE_ERRORS',
+    'HTTPError', 'RedirectLimit',
+    'ResponseBody', 'Session', 'Resource'
+]
+
+#: Nominal data chunk size to process by default
 CHUNK_SIZE = 16 * 1024 * 1024
 
+#: Frozen set of socket errors which will trigger retry request.
 RETRYABLE_ERRORS = frozenset([
     errno.EPIPE, errno.ETIMEDOUT,
     errno.ECONNRESET, errno.ECONNREFUSED, errno.ECONNABORTED,
@@ -43,7 +51,11 @@ class RedirectLimit(Exception):
     """
 
 class ResponseBody(object):
+    """Readonly file-like wrapper for http response data.
 
+    :param resp: :class:`~httplib.HTTPResponse` instance.
+    :param callback: Callable object.
+    """
     def __init__(self, resp, callback):
         self.resp = resp
         self.callback = callback
@@ -76,12 +88,12 @@ class ResponseBody(object):
     def read(self, size=None):
         """Read response data.
 
-        Args:
-            size (int): Amount of data in bytes that should be readed.
-                        None value means read all at once.
+        :param size: Amount of data in bytes that should be readed.
+                     ``None`` value means "read all at once".
+        :type size: int
 
-        Returns:
-            Data chunk as string.
+        :return: Data chunk.
+        :rtype: str
         """
         bytes_data = self.resp.read(size)
         if size is None or len(bytes_data) < size:
@@ -93,7 +105,7 @@ class ResponseBody(object):
         return self.resp.fp.readline()
 
     def readlines(self):
-        """Yields data from response line by line."""
+        """Yields response data line by line."""
         while not self.is_closed():
             yield self.readline()
 
@@ -110,12 +122,23 @@ class ResponseBody(object):
         return self.resp.getheader('transfer-encoding') == 'chunked'
 
     def is_closed(self):
-        """Check if response stream is closed"""
+        """Check if response stream is closed."""
         return self.resp.isclosed()
 
 
 class Session(object):
+    """HTTP session holder.
 
+    :param retry_delays: List of delay seconds before next try will be used.
+    :type retry_delays: list of int
+
+    :param max_redirects: Maximum number of redirects before
+                          :exc:`~phoxpy.http.RedirectLimit` will be raised.
+    :type max_redirects: int
+
+    :param retryable_errors:
+    :type retryable_errors: iterable
+    """
     def __init__(self, retry_delays=None, max_redirects=5,
                  retryable_errors=RETRYABLE_ERRORS):
         self._conns = {}
@@ -160,29 +183,31 @@ class Session(object):
                 _num_redirects=0):
         """Send request to specified url.
 
-        Args:
-            method (str): Request method (GET, POST, PUT etc.).
-            url (str): Target site URL.
-            body (str, file-like, callable): Request body data.
-                If body is `callable` it would be call to extract value that
-                needs to be sent.
-                If body is `file-like` object, than request data would be sent
-                by chunks sized by CHUNK_SIZE variable.
-                If body is `str` it would be sent as is as regular request.
-            credentials (tuple): Username and password pair used for basic auth.
-            _num_redirects (int): Internal redirect counter.
+        :param method: Request method (GET, POST, PUT etc.).
+        :type method: str
 
-        Returns:
-            3-element tuple with response status code (int), headers (dict) and
-            response data. Response data could be StringIO or ResponseBody
-            instance depending from CHUNK_SIZE constant and Content-Length
-            header values.
+        :param url: Target site URL.
+        :type url: str
 
-        Raises:
-            HTTPError: If HTTP response has code > 400.
-            RedirectLimit: If redirect limit reached.
-            socket.error: If number of retries are exceeded or error wasn't
-                          one of retryable.
+        :param body: Request body data. If body is file-like object then request
+                     would be sent with `chunked` transfer encoding.
+        :type body: str, file or callable object
+
+        :param headers: HTTP headers dictionary.
+        :type headers: dict
+
+        :param credentials: Username and password pair used for basic auth.
+        :type credentials: list, tuple
+
+        :return: 3-element ``tuple`` of response status code (``int``),
+                 http headers (``dict``) and response data.
+
+                 Response data could be instance of
+                 :class:`~StringIO.StringIO` or
+                 :class:`~phoxpy.http.ResponseBody`
+                 depending from ``CHUNK_SIZE`` variable and `Content-Length`
+                 header values.
+        :rtype: tuple
         """
 
         method, url, body, headers, credentials = \
@@ -333,7 +358,20 @@ class Session(object):
 
 
 class Resource(object):
+    """Provides methods to send request to HTTP resource.
 
+    :param url: HTTP resource URL.
+    :type url: str
+
+    :param session: Custom :class:`~phoxpy.http.Session` instance.
+                    If ``None`` new session will be created.
+
+    :param headers: Default HTTP headers.
+    :type headers: dict
+
+    :param credentials: Username and password pair used for basic auth.
+    :type credentials: list, tuple
+    """
     def __init__(self, url, session=None, headers=None, credentials=None):
         self.url = url
         if session is None:
@@ -351,19 +389,26 @@ class Resource(object):
     def post(self, path=None, body=None, headers=None, **params):
         """Sends POST request to resource.
 
-        Args:
-            path (str): resource relative path.
-            body (str, file-like, callable object): request body.
-            headers (dict): HTTP headers.
+        :param path: Resource relative path.
+        :type path: str
 
-        Kwargs:
-            query arguments.
+        :param body: Request body data. If body is file-like object then request
+                     would be sent with `chunked` transfer encoding.
+        :type body: str, file or callable object
+
+        :param headers: HTTP headers dictionary.
+        :type headers: dict
+
+        :param params: Custom query parameters as keyword arguments.
             
-        Returns:
-            3-element tuple with response status code (int), headers (dict) and
-            response data. Response data could be StringIO or ResponseBody
-            instance depending from CHUNK_SIZE constant and Content-Length
+        :return: 3-element ``tuple`` of response status code (``int``),
+            http headers (``dict``) and response data.
+
+            Response data could be instance of
+            :class:`~StringIO.StringIO` or :class:`~phoxpy.http.ResponseBody`
+            depending from ``CHUNK_SIZE`` constant and `Content-Length`
             header values.
+        :rtype: tuple
         """
         return self._request('POST', path, body, headers, **params)
 
