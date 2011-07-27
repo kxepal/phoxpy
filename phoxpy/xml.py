@@ -6,25 +6,12 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
-"""An abstraction layer over various ElementTree-based XML modules.
-
-This module currently supports the following XML modules:
- - ``lxml.etree``: http://lxml.de/
- - ``xml.etree.ElementTree``: This is the version of ``ElementTree`` that is
-   bundled with the Python standard library since version 2.5. ``cElementTree``
-   realization is prefered, but ``ElementTree`` could be used too.
-   (see http://docs.python.org/library/xml.etree.elementtree.html)
- - ``cElementTree``: http://effbot.org/zone/celementtree.htm
- - ``elementtree.ElementTree``: http://effbot.org/zone/element-index.htm
-
-By default, modules are tried to be imported in this order with fallback to next
-one on ImportError exception.
-"""
+"""An abstraction layer over various ElementTree-based XML modules."""
 
 import sys
 
-__all__ = ['use', 'Element', 'ElementTree', 'ElementType', 'ElementTreeType',
-           'load', 'dump', 'ENCODING']
+__all__ = ['ENCODING','ElementType', 'ElementTreeType',
+           'Element', 'ElementTree', 'use', 'dump', 'load']
 
 _using = None
 _initialized = False
@@ -32,8 +19,11 @@ _Element = None
 _ElementTree = None
 _load = None
 _dump = None
+#: Type of :class:`~phoxpy.xml.Element` realization.
 ElementType = None
+#: Type of :class:`~phoxpy.xml.ElementTree` realization.
 ElementTreeType = None
+#: Default XML encoding.
 ENCODING = 'Windows-1251' # there is 2011 year, but we still have to use
                           # something not like utf-8
 
@@ -41,13 +31,22 @@ def use(module):
     """Set the XML library that should be used by specifying a known module
     name.
 
-    The modules "lxml.etree", "xml.etree.cElementTree", "xml.etree.ElementTree"
-    are
-    currently supported for the ``module`` parameter.
+    Currently supports next XML modules:
 
-    Args:
-        module: The name of the XML library module to use, or the module
-                object itself.
+     - ``lxml.etree``: http://lxml.de
+     - ``xml.etree.ElementTree``: This is the version of
+       :mod:`~xml.etree.ElementTree` that is bundled with the Python standard
+       library since version 2.5. `cElementTree` realization
+       is prefered, but `ElementTree` could be used too.
+     - ``cElementTree``: http://effbot.org/zone/celementtree.htm
+     - ``elementtree.ElementTree``: http://effbot.org/zone/element-index.htm
+
+    :param module: The name of the XML library module to use or the module
+                   object itself.
+    :type module: str or module
+
+    :raises:
+        :exc:`ValueError`: If specified module is unsupported.
     """
     global _using, _initialized
     if not isinstance(module, basestring):
@@ -58,11 +57,13 @@ def use(module):
     _using = module
     _initialized = False
 
-def should_initialize_first(f):
+def should_initialize_first(func):
     def wrapper(*args, **kwargs):
         if not _initialized:
             _initialize()
-        return f(*args, **kwargs)
+        return func(*args, **kwargs)
+    wrapper.__doc__ = func.__doc__
+    wrapper.__name__ = func.__name__
     return wrapper
 
 @should_initialize_first
@@ -77,7 +78,7 @@ def ElementTree(node):
 
 @should_initialize_first
 def load(s):
-    """Load xml source string to Element intance."""
+    """Load xml source string to :class:`~phoxpy.xml.Element` instance."""
     return _load(s)
 
 @should_initialize_first
@@ -85,13 +86,18 @@ def dump(xmlsrc, doctype=None, encoding=None):
     """Dump module with very limited support of doctype setting
     and force xml declaration definition.
 
-    Args:
-        xmlsrc: ``Element`` or ``ElementTree`` instance.
-        doctype: 3-element ``tuple`` with name, identifier and dtd filename.
-        encoding: Document encoding.
+    :param xmlsrc: XML object.
+    :type xmlsrc: :class:`~phoxpy.xml.Element`
+                  or :class:`~phoxpy.xml.ElementTree`
 
-    Returns:
-        XML source string.
+    :param doctype: 3-element ``tuple`` with name, identifier and dtd filename.
+    :type doctype: tuple or list
+
+    :param encoding: Custom document encoding.
+    :type encoding: str
+
+    :return: XML source string.
+    :rtype: str
     """
     if encoding is None:
         encoding = ENCODING or 'utf-8'
