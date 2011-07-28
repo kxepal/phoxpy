@@ -899,6 +899,57 @@ class GenericMappingTestCase(unittest.TestCase):
         self.assertRaises(TypeError, obj.__setitem__, 'foo', object())
         self.assertRaises(TypeError, obj.__setitem__, 'foo', [object()])
 
+    def test_wrap(self):
+        class Post(mapping.Mapping):
+            author = mapping.TextField(default='foo')
+            content = mapping.TextField(default='bar')
+            posted_at = mapping.DateTimeField(
+                            default=datetime.datetime(2010, 2, 14, 2, 31, 30)
+                        )
+        post = Post()
+        obj = mapping.GenericMapping.wrap(post.unwrap(xml.Element('root')))
+        self.assertEqual(obj['author'], post.author)
+        self.assertEqual(obj['content'], post.content)
+        self.assertEqual(obj['posted_at'], post.posted_at)
+
+    def test_wrap_list_field(self):
+        class Dummy(mapping.Mapping):
+            numbers = mapping.ListField(mapping.IntegerField())
+        dummy = Dummy(numbers=[1, 2, 3])
+        obj = mapping.GenericMapping.wrap(dummy.unwrap(xml.Element('dummy')))
+        self.assertEqual(obj['numbers'], dummy.numbers)
+
+    def test_wrap_empty_list(self):
+        root = xml.Element('root')
+        root.append(xml.Element('s', n='foo'))
+        obj = mapping.GenericMapping.wrap(root)
+        self.assertEqual(obj['foo'], [])
+        obj['foo'].append('bar')
+        self.assertEqual(obj['foo'], ['bar'])
+        self.assertRaises(TypeError, obj['foo'].append, 42)
+
+    def test_wrap_object(self):
+        root = xml.Element('root')
+        obj = xml.Element('o', n='foo')
+        obj.append(xml.Element('f', n='bar', t='S', v='baz'))
+        root.append(obj)
+        dummy = mapping.GenericMapping.wrap(root)
+        self.assertEqual(dummy['foo']['bar'], 'baz')
+
+    def test_fail_wrap_unknown_field(self):
+        root = xml.Element('root')
+        root.append(xml.Element('f', t='U', n='foo'))
+        self.assertRaises(ValueError, mapping.GenericMapping.wrap, root)
+
+        root = xml.Element('root')
+        root.append(xml.Element('foo', t='bar', n='baz'))
+        self.assertRaises(ValueError, mapping.GenericMapping.wrap, root)
+
+    def test_fail_wrap_unnamed_field(self):
+        root = xml.Element('root')
+        root.append(xml.Element('f', t='I'))
+        self.assertRaises(ValueError, mapping.GenericMapping.wrap, root)
+
 
 class ObjectFieldTestCase(unittest.TestCase):
 

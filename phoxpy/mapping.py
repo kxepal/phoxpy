@@ -336,6 +336,64 @@ class GenericMapping(Mapping):
         self._fields[key] = field
         self._data[key] = field.to_xml(value)
 
+    @classmethod
+    def wrap(cls, xmlsrc, **defaults):
+        """Wrap xml data to mapping fields by node `n` attribute. If no field
+        matched new one will be created to fit serialized value.
+
+        :param xmlsrc: XML source object.
+        :type xmlsrc: :class:`~phoxpy.xml.Element`
+                      or :class:`~phoxpy.xml.ElementTree`
+
+        :return: Mapping instance with wrapped data.
+        :rtype: :class:`~phoxpy.mapping.GenericMapping`
+
+        :raise:
+            :exc:`ValueError`: If there is not field to fit xml element value.
+        """
+        def xmlelem_to_field(elem):
+            for fieldcls, value in FIELDS_BY_XML_ATTRS.items():
+                tagname, attrs = value
+                if elem.tag != tagname:
+                    continue
+                if not attrs:
+                    break
+                for key, value in attrs.items():
+                    if elem.attrib[key] != value:
+                        break
+                else:
+                    break
+            else:
+                raise ValueError('Unable map node %s' % xml.dump(elem))
+            fname = elem.attrib.get('n', '')
+            if fieldcls is ListField:
+                if len(elem):
+                    return fieldcls(xmlelem_to_field(elem[0]), name=fname)
+                else:
+                    return fieldcls(TextField(), name=fname)
+            elif fieldcls is ObjectField:
+                d = {}
+                for subelem in elem:
+                    field = xmlelem_to_field(subelem)
+                    d[field.name] = field
+                return fieldcls(GenericMapping.build(**d), name=fname)
+            else:
+                return fieldcls(name=fname)
+        
+        if not isinstance(xmlsrc, (xml.ElementType, xml.ElementTreeType)):
+            raise TypeError('Invalid xml data %r' % xmlsrc)
+        instance = cls(**defaults)
+        if isinstance(xmlsrc, xml.ElementType):
+            xmlsrc = xml.ElementTree(xmlsrc)
+        for node in xmlsrc.getroot():
+            if not 'n' in node.attrib:
+                xmlstr = xml.dump(xmlsrc)
+                raise ValueError('Unnamed field %r\n%s' % (xmlsrc, xmlstr))
+            fname = node.attrib['n']
+            instance._data[fname] = node
+            instance._fields[fname] = xmlelem_to_field(node)
+        return instance
+
     def setdefault(self, key, value):
         """Sets default value to specified field by name."""
         if not (key in self._fields or key in self._data):
@@ -904,4 +962,16 @@ FIELDS_BY_PYTYPE = {
     datetime.datetime: DateTimeField,
     list: ListField,
     dict: ObjectField
+}
+
+FIELDS_BY_XML_ATTRS = {
+    BooleanField: ('f', {'t': 'B'}),
+    IntegerField: ('f', {'t': 'I'}),
+    LongField: ('f', {'t': 'L'}),
+    FloatField: ('f', {'t': 'F'}),
+    TextField: ('f', {'t': 'S'}),
+    DateTimeField: ('f', {'t': 'D'}),
+    RefField: ('r', {}),
+    ListField: ('s', {}),
+    ObjectField: ('o', {}),
 }
