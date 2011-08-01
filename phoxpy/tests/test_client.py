@@ -33,6 +33,59 @@ class SessionTestCase(unittest.TestCase):
         self.assertFalse(session.is_active())
 
 
+class ServerTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.session = client.Session(login='John', password='Doe',
+                                      client_id='foo-bar-baz')
+        self.session.open('localhost', http_session=MockHttpSession())
+
+    def test_getitem(self):
+        server = client.Server()
+        server.update(self.session)
+        collection = server['foo']
+        self.assertTrue(collection, client.Collection)
+        self.assertEqual(collection.version, 0)
+
+    def test_contains(self):
+        server = client.Server()
+        server.update(self.session)
+        self.assertTrue('foo' in server)
+        collection = server['foo']
+        self.assertTrue(collection in server)
+
+    def test_iter(self):
+        server = client.Server()
+        server.update(self.session)
+        self.assertEqual(
+            sorted(server),
+            sorted(['foo', 'bar', 'baz'])
+        )
+
+    def test_items(self):
+        server = client.Server()
+        server.update(self.session)
+        self.assertEqual(
+            sorted(server.items()),
+            sorted(zip(server.keys(), server.values()))
+        )
+
+    def test_update(self):
+        server = client.Server()
+        server.update(self.session)
+        self.assertEqual(
+            sorted(server.keys()),
+            sorted(['foo', 'bar', 'baz'])
+        )
+        self.assertTrue(
+            isinstance(server.values().next(), client.Collection)
+        )
+        self.assertEqual(
+            sorted(map(lambda c: c.version, server.values())),
+            sorted([0, 1, 2])
+
+        )
+
 
 if __name__ == '__main__':
     unittest.main()
