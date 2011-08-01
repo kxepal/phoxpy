@@ -77,7 +77,12 @@ class PhoxRequest(Message):
 
     @classmethod
     def wrap(cls, xmlsrc, **defaults):
-        return super(PhoxRequest, cls).wrap(xmlsrc.find('content'), **defaults)
+        defaults.setdefault('msgtype', xmlsrc.attrib['type'])
+        defaults.setdefault('sessionid', xmlsrc.attrib.get('sessionid'))
+        defaults.setdefault('buildnumber', xmlsrc.attrib.get('buildnumber'))
+        defaults.setdefault('version', xmlsrc.attrib.get('version'))
+        req = super(PhoxRequest, cls).wrap(xmlsrc.find('content'), **defaults)
+        return req
 
     def unwrap(self):
         root = xml.Element('phox-request', type=self.type)
