@@ -17,19 +17,20 @@ class MockHttpSession(object):
                 _num_redirects=0):
         return 200, {}, StringIO(str(LisServer.dispatch(body)))
 
+
 class LisServer(object):
 
     def dispatch(self, xmlsrc):
-        request = xml.load(xmlsrc)
-        return getattr(self, request.attrib['type'].replace('-', '_'))(request)
+        request = messages.PhoxRequest.wrap(xml.load(xmlsrc))
+        return getattr(self, request.type.replace('-', '_'))(request)
 
     def login(self, request):
         return messages.AuthResponse(sessionid='12345', buildnumber='54321')
 
     def logout(self, request):
         return messages.PhoxResponse(
-            buildnumber=request.attrib['buildnumber'],
-            sessionid=request.attrib['sessionid']
+            buildnumber=request.buildnumber,
+            sessionid=request.sessionid
         )
 
 LisServer = LisServer()
