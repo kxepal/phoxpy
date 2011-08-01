@@ -72,6 +72,18 @@ class PhoxRequestTestCase(unittest.TestCase):
         msg = messages.PhoxRequest('foo', version='bar')
         self.assertRaises(AttributeError, setattr, msg, 'version', 'baz')
 
+    def test_wrap_should_containt_attrib_type(self):
+        root = xml.Element('phox-request')
+        root.append(xml.Element('content'))
+        self.assertRaises(KeyError, messages.PhoxRequest.wrap, root)
+
+    def test_wrap(self):
+        root = xml.Element('phox-request')
+        root.attrib['type'] = 'foo'
+        root.append(xml.Element('content'))
+        req = messages.PhoxRequest.wrap(root)
+        self.assertEqual(req.type, 'foo')
+
     def test_unwrap(self):
         msg = messages.PhoxRequest('foo', sessionid='bar',
                                    version='baz', buildnumber='zoo')
