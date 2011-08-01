@@ -6,7 +6,7 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
-
+from itertools import izip
 from phoxpy import xml
 from phoxpy.exceptions import handle_lis_error
 from phoxpy.http import Resource
@@ -174,3 +174,71 @@ class Session(object):
     def admin_mode(self):
         """Flag of admin mode usage."""
         return bool(self._resmsg.admin_mode)
+
+
+class Server(object):
+    """Representation of LIS server instance."""
+    def __init__(self):
+        self._data = {}
+
+    def __getitem__(self, item):
+        return self._data[item]
+
+    def __iter__(self):
+        return self.keys()
+
+    def __contains__(self, item):
+        if isinstance(item, Collection):
+            return item.name in self.keys()
+        return item in self.keys()
+
+    def keys(self):
+        """Yields available collection names."""
+        for key in self._data:
+            yield key
+
+    def values(self):
+        """Yields :class:`~phoxpy.client.Collection` instances."""
+        for value in self._data.values():
+            yield value
+
+    def items(self):
+        """Yields two element tuples of collection name/instance."""
+        for key, value in izip(self.keys(), self.values()):
+            yield key, value
+
+    def update(self, session):
+        """Updates information of available collections and their versions.
+
+        :param session: Active session instance.
+        :type session: :class:`~phoxpy.client.Session`
+        """
+        response = session.request(
+            '', PhoxRequest('directory-versions', session.id)
+        )
+        self._data.clear()
+        for item in response['versions']:
+            name, version = item['name'], int(item['version'])
+            self._data[name] = Collection(name, version)
+
+
+class Collection(object):
+    """Representation of LIS data collection.
+
+    :param name: Collection name.
+    :type name: str
+
+    :param version: Current collection version.
+    :type version: int
+    """
+    def __init__(self, name, version=None):
+        self._name = name
+        self._version = version
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def version(self):
+        return self._version
