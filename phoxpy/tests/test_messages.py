@@ -23,6 +23,12 @@ class MessageTestCase(unittest.TestCase):
             ids = mapping.ListField(mapping.RefField())
         self.assertRaises(NotImplementedError, str, Post(ids=[1, 2, 3]))
 
+    def test_session_id(self):
+        msg = messages.PhoxRequest('foo', sessionid='bar')
+        self.assertEqual(msg.sessionid, 'bar')
+        msg.sessionid = 'baz'
+        self.assertEqual(msg.sessionid, 'baz')
+
     def test_unwrap_default_tag(self):
         class Post(messages.Message):
             ids = mapping.ListField(mapping.RefField())
@@ -47,14 +53,6 @@ class PhoxRequestTestCase(unittest.TestCase):
     def test_is_phoxmsg_instance(self):
         msg = messages.PhoxRequest('foo')
         self.assertTrue(isinstance(msg, messages.Message))
-
-    def test_session_id(self):
-        msg = messages.PhoxRequest('foo', sessionid='bar')
-        self.assertEqual(msg.sessionid, 'bar')
-
-    def test_read_only_session_id(self):
-        msg = messages.PhoxRequest('foo', sessionid='bar')
-        self.assertRaises(AttributeError, setattr, msg, 'sessionid', 'baz')
 
     def test_buildnumber(self):
         msg = messages.PhoxRequest('foo', buildnumber='bar')
@@ -118,14 +116,6 @@ class PhoxResponseTestCase(unittest.TestCase):
     def test_is_phoxmsg_instance(self):
         msg = messages.PhoxResponse()
         self.assertTrue(isinstance(msg, messages.Message))
-
-    def test_session_id(self):
-        msg = messages.PhoxResponse(sessionid='bar')
-        self.assertEqual(msg.sessionid, 'bar')
-
-    def test_read_only_session_id(self):
-        msg = messages.PhoxResponse(sessionid='bar')
-        self.assertRaises(AttributeError, setattr, msg, 'sessionid', 'baz')
 
     def test_buildnumber(self):
         msg = messages.PhoxResponse(buildnumber='bar')
