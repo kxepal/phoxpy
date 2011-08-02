@@ -98,11 +98,11 @@ class Session(object):
         :return: self
         """
         self._resource = PhoxResource(url, session=http_session)
-        response = self.request('', self._reqmsg)
+        response = self.request(data=self._reqmsg)
         self._resmsg = AuthResponse.wrap(response.unwrap())
         return self
 
-    def request(self, path, data, headers=None, **params):
+    def request(self, path='', data=None, headers=None, **params):
         """Makes single request to server.
 
         :param path: Resource relative path.
@@ -119,6 +119,10 @@ class Session(object):
         :return: Response message.
         :rtype: :class:`~phoxpy.messages.PhoxResponse`
         """
+        if data is not None and not isinstance(data, Message):
+            raise TypeError('Message instance or None expected, got %r' % data)
+        if isinstance(data, Message):
+            data.sessionid = self.id
         return PhoxResponse.wrap(
             self._resource.post_xml(path, data, headers, **params)[2]
         )
@@ -126,8 +130,7 @@ class Session(object):
     def close(self):
         """Closes current active session."""
         assert self._resource is not None, 'Session has not been activated.'
-        id, buildnumber = self.id, self._resmsg.buildnumber
-        self.request('', PhoxRequest('logout', id, buildnumber))
+        self.request(data=PhoxRequest('logout'))
         self._resmsg = AuthResponse('')
         return True
 
@@ -213,9 +216,7 @@ class Server(object):
         :param session: Active session instance.
         :type session: :class:`~phoxpy.client.Session`
         """
-        response = session.request(
-            '', PhoxRequest('directory-versions', session.id)
-        )
+        response = session.request(data=PhoxRequest('directory-versions'))
         self._data.clear()
         for item in response['versions']:
             name, version = item['name'], int(item['version'])
