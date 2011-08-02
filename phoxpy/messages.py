@@ -17,9 +17,28 @@ __all__ = ['Message', 'PhoxRequest', 'PhoxResponse',
            'AuthRequest', 'AuthResponse']
 
 class Message(GenericMapping):
-    """Base communication message mapping."""
+    """Base communication message mapping.
+
+    :param sessionid: Session id.
+    :type sessionid: str
+    """
+    def __init__(self, sessionid=None, **data):
+        self._session_id = sessionid
+        super(Message, self).__init__(**data)
+
     def __str__(self):
         raise NotImplementedError('Should be implemented for each message type')
+
+    def _get_sessionid(self):
+        """Session id number."""
+        return self._session_id
+
+    def _set_sessionid(self, value):
+        if value is not None and not isinstance(value, basestring):
+            raise TypeError('Invalid value type %r' % type(value))
+        self._session_id = value
+
+    sessionid = property(_get_sessionid, _set_sessionid)
 
     def unwrap(self, root=None):
         content = xml.Element('content')
@@ -48,10 +67,9 @@ class PhoxRequest(Message):
     def __init__(self, msgtype, sessionid=None, buildnumber=None, version=None,
                  **data):
         self._type = msgtype
-        self._session_id = sessionid
         self._buildnumber = buildnumber
         self._version = version
-        super(PhoxRequest, self).__init__(**data)
+        super(PhoxRequest, self).__init__(sessionid, **data)
 
     def __str__(self):
         doctype = ('phox-request', 'SYSTEM', 'phox.dtd')
@@ -61,11 +79,6 @@ class PhoxRequest(Message):
     def type(self):
         """Request message type."""
         return self._type
-
-    @property
-    def sessionid(self):
-        """Session id number for related request."""
-        return self._session_id
 
     @property
     def buildnumber(self):
@@ -105,18 +118,12 @@ class PhoxResponse(Message):
     :type buildnumber: str
     """
     def __init__(self, sessionid=None, buildnumber=None, **data):
-        self._session_id = sessionid
         self._buildnumber = buildnumber
-        super(PhoxResponse, self).__init__(**data)
+        super(PhoxResponse, self).__init__(sessionid, **data)
 
     def __str__(self):
         doctype = ('phox-response', 'SYSTEM', 'phox.dtd')
         return xml.dump(self.unwrap(), doctype=doctype)
-
-    @property
-    def sessionid(self):
-        """Session id number for related response."""
-        return self._session_id
 
     @property
     def buildnumber(self):
