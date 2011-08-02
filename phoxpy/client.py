@@ -10,8 +10,8 @@ from itertools import izip
 from phoxpy import xml
 from phoxpy.exceptions import handle_lis_error
 from phoxpy.http import Resource
-from phoxpy.messages import Message, PhoxRequest, PhoxResponse,\
-                            AuthRequest, AuthResponse
+from phoxpy.messages import Message, PhoxRequest, PhoxResponse
+from phoxpy.messages.auth import AuthRequest, AuthResponse
 
 
 __all__ = ['PhoxResource', 'Session']

@@ -7,14 +7,11 @@
 # you should have received as part of this distribution.
 #
 
-from random import randint
 from phoxpy import xml
-from phoxpy.mapping import BooleanField, IntegerField, ListField, LongField, \
-                           GenericMapping, RefField, TextField
+from phoxpy.mapping import GenericMapping
 
 
-__all__ = ['Message', 'PhoxRequest', 'PhoxResponse',
-           'AuthRequest', 'AuthResponse']
+__all__ = ['Message', 'PhoxRequest', 'PhoxResponse']
 
 class Message(GenericMapping):
     """Base communication message mapping.
@@ -151,77 +148,3 @@ class PhoxResponse(Message):
             content.append(obj)
         root.append(content)
         return root
-
-
-class AuthRequest(PhoxRequest):
-    """Authentication request message.
-
-    :param company: Company name.
-    :type company: str
-
-    :param lab: Laboratory name.
-    :type lab: str
-
-    :param login: Login name.
-    :type login: str
-
-    :param password: Related password.
-    :type password: str
-
-    :param machine: Client hostname.
-    :type machine: str
-
-    :param client_id: License string heavy binded to computer hardware.
-    :type client_id: str
-
-    :param session_code: Secret session code.
-    :type session_code: int
-
-    :param instance_count: Instance count.
-    :type instance_count: int
-    """
-    company = TextField(default='')
-    lab = TextField(default='')
-    login = TextField()
-    password = TextField()
-    machine = TextField()
-    client_id = TextField(name='clientId')
-    session_code = IntegerField(name='sessionCode',
-                                default=lambda: randint(10000, 20000))
-    instance_count = IntegerField(name='instanceCount', default=0)
-
-    def __init__(self, *args, **data):
-        super(AuthRequest, self).__init__('login', *args, **data)
-
-
-class AuthResponse(PhoxResponse):
-    """Authentication response message.
-
-    :param departments: List of department ids which user is belong to.
-    :type departments: list
-
-    :param hospitals: List of hospital ids which user is belong to.
-    :type  hospitals: list
-
-    :param rights: List of active permission ids.
-    :type  rights: list
-
-    :param employee: Referenced Employee object id.
-    :type employee: int
-
-    :param session_code: Session code number.
-    :type session_code: int or long
-
-    :param server_version: Server version string.
-    :type server_version: str
-
-    :param admin_mode: Flag of admin mode usage.
-    :type admin_mode: bool
-    """
-    departments = ListField(RefField())
-    hospitals = ListField(RefField())
-    rights = ListField(RefField())
-    employee = RefField()
-    session_code = LongField(name='sessionCode')
-    server_version = TextField(name='serverVersion')
-    admin_mode = BooleanField(name='adminMode')

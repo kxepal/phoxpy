@@ -26,7 +26,9 @@ class LisServer(object):
         return getattr(self, request.type.replace('-', '_'))(request)
 
     def login(self, request):
-        return messages.AuthResponse(sessionid='12345', buildnumber='54321')
+        return messages.auth.AuthResponse(
+            sessionid='12345', buildnumber='54321'
+        )
 
     def logout(self, request):
         return messages.PhoxResponse(
