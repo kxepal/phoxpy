@@ -179,6 +179,12 @@ class Mapping(object):
     def __gt__(self, other):
         return self._to_python() > other
 
+    def __contains__(self, item):
+        return item in self._fields or item in self._data
+
+    def __iter__(self):
+        return self.keys()
+
     def _to_python(self):
         return dict(self.items())
 
@@ -240,6 +246,13 @@ class Mapping(object):
         for name, node in self._data.items():
             instance._data[name] = copy.deepcopy(node)
         return instance
+
+    def get(self, key, default=None):
+        """Returns data by `key` or `default` if missing."""
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
     def keys(self):
         """Iterate over field names."""
