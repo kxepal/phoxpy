@@ -8,7 +8,6 @@
 #
 import datetime
 import unittest
-from operator import itemgetter
 
 from phoxpy import xml
 from phoxpy import mapping
@@ -850,6 +849,32 @@ class MappingTestCase(unittest.TestCase):
             sorted(list(obj.values())),
             sorted(['foo', [42], {'zoo': 'boo'}])
         )
+
+    def test_get(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField(default='bar')
+        obj = Dummy()
+        self.assertEqual(obj.get('foo'), 'bar')
+
+    def test_get_default(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField(default='bar')
+        obj = Dummy()
+        self.assertEqual(obj.get('bar', 'baz'), 'baz')
+
+    def test_contains(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField(default='bar')
+        obj = Dummy()
+        self.assertTrue('foo' in obj)
+        self.assertTrue('bar' not in obj)
+
+    def test_iter(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.TextField(default='bar')
+            baz = mapping.IntegerField(default=42)
+        obj = Dummy()
+        self.assertEqual(sorted(iter(obj)), sorted(obj.keys()))
 
 
 class GenericMappingTestCase(unittest.TestCase):
