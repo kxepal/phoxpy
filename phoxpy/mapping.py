@@ -828,7 +828,7 @@ class ListField(Field):
             return len(self.list)
 
         def __nonzero__(self):
-            return bool(self.list)
+            return bool(len(self.list))
 
         def __reduce__(self):
             return self.list.__reduce__()
