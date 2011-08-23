@@ -320,32 +320,8 @@ class GenericMapping(Mapping):
             self._set_field(key, value)
         super(GenericMapping, self).__setitem__(key, value)
 
-    def _gen_field(self, key, value):
-        fieldcls = FIELDS_BY_PYTYPE.get(type(value), None)
-        if fieldcls is None:
-            raise TypeError('Could not map value %r (%s) to any known field'
-                            '' % (value, type(value)))
-        if fieldcls is ListField:
-            if value:
-                item = value[0]
-                itemfield = FIELDS_BY_PYTYPE.get(type(item), None)
-                if itemfield is None:
-                    raise TypeError('Could not map value %r (%s) to any'
-                                    ' known field' % (item, type(item)))
-            else:
-                itemfield = FIELDS_BY_PYTYPE[str]
-            field = fieldcls(itemfield(), name=key)
-        elif fieldcls is ObjectField:
-            d = {}
-            for key, item in value.items():
-                d[key] = self._gen_field(key, item)
-            field = fieldcls(GenericMapping.build(**d), name=key)
-        else:
-            field = fieldcls(name=key)
-        return field
-
     def _set_field(self, key, value):
-        field = self._gen_field(key, value)
+        field = gen_field_by_value(key, value)
         self._fields[key] = field
         self._data[key] = field.to_xml(value)
 
@@ -364,35 +340,6 @@ class GenericMapping(Mapping):
         :raise:
             :exc:`ValueError`: If there is not field to fit xml element value.
         """
-        def xmlelem_to_field(elem):
-            for fieldcls, value in FIELDS_BY_XML_ATTRS.items():
-                tagname, attrs = value
-                if elem.tag != tagname:
-                    continue
-                if not attrs:
-                    break
-                for key, value in attrs.items():
-                    if elem.attrib[key] != value:
-                        break
-                else:
-                    break
-            else:
-                raise ValueError('Unable map node %s' % xml.dump(elem))
-            fname = elem.attrib.get('n', '')
-            if fieldcls is ListField:
-                if len(elem):
-                    return fieldcls(xmlelem_to_field(elem[0]), name=fname)
-                else:
-                    return fieldcls(TextField(), name=fname)
-            elif fieldcls is ObjectField:
-                d = {}
-                for subelem in elem:
-                    field = xmlelem_to_field(subelem)
-                    d[field.name] = field
-                return fieldcls(GenericMapping.build(**d), name=fname)
-            else:
-                return fieldcls(name=fname)
-        
         if not isinstance(xmlsrc, (xml.ElementType, xml.ElementTreeType)):
             raise TypeError('Invalid xml data %r' % xmlsrc)
         instance = cls(**defaults)
@@ -404,7 +351,7 @@ class GenericMapping(Mapping):
                 raise ValueError('Unnamed field %r\n%s' % (xmlsrc, xmlstr))
             fname = node.attrib['n']
             instance._data[fname] = node
-            instance._fields[fname] = xmlelem_to_field(node)
+            instance._fields[fname] = gen_field_by_xmlelem(node)
         return instance
 
     def setdefault(self, key, value):
@@ -988,3 +935,52 @@ FIELDS_BY_XML_ATTRS = {
     ListField: ('s', {}),
     ObjectField: ('o', {}),
 }
+
+def gen_field_by_value(name, value):
+    fieldcls = FIELDS_BY_PYTYPE.get(type(value), None)
+    if fieldcls is None:
+        raise TypeError('Could not map value %r (%s) to any known field'
+                        '' % (value, type(value)))
+    if fieldcls is ListField:
+        if value:
+            itemfield = gen_field_by_value(None, value[0])
+        else:
+            itemfield = FIELDS_BY_PYTYPE[str]()
+        field = fieldcls(itemfield, name=name)
+    elif fieldcls is ObjectField:
+        d = {}
+        for key, item in value.items():
+            d[key] = gen_field_by_value(key, item)
+        field = fieldcls(GenericMapping.build(**d), name=name)
+    else:
+        field = fieldcls(name=name)
+    return field
+
+def gen_field_by_xmlelem(elem):
+    for fieldcls, value in FIELDS_BY_XML_ATTRS.items():
+        tagname, attrs = value
+        if elem.tag != tagname:
+            continue
+        if not attrs:
+            break
+        for key, value in attrs.items():
+            if elem.attrib[key] != value:
+                break
+        else:
+            break
+    else:
+        raise ValueError('Unable map element %s' % xml.dump(elem))
+    fname = elem.attrib.get('n', '')
+    if fieldcls is ListField:
+        if len(elem):
+            return fieldcls(gen_field_by_xmlelem(elem[0]), name=fname)
+        else:
+            return fieldcls(TextField(), name=fname)
+    elif fieldcls is ObjectField:
+        d = {}
+        for subelem in elem:
+            field = gen_field_by_xmlelem(subelem)
+            d[field.name] = field
+        return fieldcls(GenericMapping.build(**d), name=fname)
+    else:
+        return fieldcls(name=fname)
