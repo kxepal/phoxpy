@@ -975,6 +975,14 @@ class GenericMappingTestCase(unittest.TestCase):
         root.append(xml.Element('f', t='I'))
         self.assertRaises(ValueError, mapping.GenericMapping.wrap, root)
 
+    def test_set_list_of_dict_field(self):
+        dummy = mapping.GenericMapping()
+        dummy['foo'] = [{'bar': 'baz'}]
+
+    def test_set_dict_of_list_field(self):
+        dummy = mapping.GenericMapping()
+        dummy['foo'] = {'bar': [{'baz': [{}, {}, {}]}]}
+
 
 class ObjectFieldTestCase(unittest.TestCase):
 
