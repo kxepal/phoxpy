@@ -891,6 +891,22 @@ class MappingTestCase(unittest.TestCase):
 
 class GenericMappingTestCase(unittest.TestCase):
 
+    def test_delitem_couldnt_remove_schema_fields(self):
+        class Dummy(mapping.GenericMapping):
+            foo = mapping.TextField()
+        dummy = Dummy()
+        del dummy['foo']
+        self.assertEqual(dummy['foo'], None)
+        self.assertEqual(dummy.foo, None)
+
+    def test_delitem_removes_custom_field(self):
+        class Dummy(mapping.GenericMapping):
+            pass
+        dummy = Dummy()
+        dummy['foo'] = 'bar'
+        del dummy['foo']
+        self.assertRaises(KeyError, dummy.__getitem__, 'foo')
+
     def test_setdefault(self):
         class Dummy(mapping.GenericMapping):
             foo = mapping.TextField()
