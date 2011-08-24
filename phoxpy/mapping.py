@@ -330,6 +330,14 @@ class GenericMapping(Mapping):
         self._fields[key] = field
         self._data[key] = field.to_xml(value)
 
+    def __delitem__(self, key):
+        field = self._get_field(key)
+        if hasattr(self, key) or hasattr(self, field.name):
+            self._data[field.name] = None
+        else:
+            del self._fields[key]
+            del self._data[field.name]
+
     @classmethod
     def wrap(cls, xmlsrc, **defaults):
         """Wrap xml data to mapping fields by node `n` attribute. If no field
