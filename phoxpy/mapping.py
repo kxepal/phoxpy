@@ -151,11 +151,16 @@ class Mapping(object):
 
     def __getitem__(self, item):
         field = self._get_field(item)
-        return field.to_python(self._data[field.name])
+        elem = self._data[field.name]
+        if elem is None:
+            return None
+        return field.to_python(elem)
 
     def __setitem__(self, key, value):
         field = self._get_field(key)
-        self._data[field.name] = field.to_xml(value)
+        if value is not None:
+            value = field.to_xml(value)
+        self._data[field.name] = value
 
     def __delitem__(self, key):
         field = self._get_field(key)
@@ -921,6 +926,7 @@ FIELDS_BY_PYTYPE = {
     unicode: TextField,
     datetime.datetime: DateTimeField,
     list: ListField,
+    ListField.Proxy: ListField,
     dict: ObjectField
 }
 
