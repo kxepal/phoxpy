@@ -646,6 +646,12 @@ class MappingTestCase(unittest.TestCase):
     def test_getitem_unknown_name(self):
         self.assertRaises(KeyError, mapping.Mapping().__getitem__, 'foo')
 
+    def test_getitem_none_value(self):
+        class Dummy(mapping.Mapping):
+            field = mapping.Field(name='foo')
+        obj = Dummy()
+        self.assertEqual(obj['foo'], None)
+
     def test_setitem_unknown_name(self):
         self.assertRaises(KeyError, mapping.Mapping().__setitem__, 'foo', 'bar')
 
@@ -662,6 +668,12 @@ class MappingTestCase(unittest.TestCase):
         obj = Dummy(field='hello')
         obj['foo'] = 'world'
         self.assertEqual(obj.field, 'world')
+
+    def test_setitem_none_value(self):
+        class Dummy(mapping.Mapping):
+            field = mapping.Field(name='foo')
+        obj = Dummy()
+        self.assertEqual(obj['foo'], None)
 
     def test_delitem(self):
         class Dummy(mapping.Mapping):
