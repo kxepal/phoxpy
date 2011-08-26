@@ -24,7 +24,7 @@ class MessageTestCase(unittest.TestCase):
         self.assertRaises(NotImplementedError, str, Post(ids=[1, 2, 3]))
 
     def test_session_id(self):
-        msg = messages.PhoxRequest('foo', sessionid='bar')
+        msg = messages.Message(sessionid='bar')
         self.assertEqual(msg.sessionid, 'bar')
         msg.sessionid = 'baz'
         self.assertEqual(msg.sessionid, 'baz')
@@ -47,28 +47,20 @@ class MessageTestCase(unittest.TestCase):
 class PhoxRequestTestCase(unittest.TestCase):
 
     def test_set_type(self):
-        msg = messages.PhoxRequest('foo')
+        msg = messages.PhoxRequest(type='foo')
         self.assertEqual(msg.type, 'foo')
 
     def test_is_phoxmsg_instance(self):
-        msg = messages.PhoxRequest('foo')
+        msg = messages.PhoxRequest(type='foo')
         self.assertTrue(isinstance(msg, messages.Message))
 
     def test_buildnumber(self):
-        msg = messages.PhoxRequest('foo', buildnumber='bar')
+        msg = messages.PhoxRequest(type='foo', buildnumber='bar')
         self.assertEqual(msg.buildnumber, 'bar')
 
-    def test_read_only_buildnumber(self):
-        msg = messages.PhoxRequest('foo', buildnumber='bar')
-        self.assertRaises(AttributeError, setattr, msg, 'buildnumber', 'baz')
-
     def test_version(self):
-        msg = messages.PhoxRequest('foo', version='bar')
+        msg = messages.PhoxRequest(type='foo', version='bar')
         self.assertEqual(msg.version, 'bar')
-
-    def test_read_only_version(self):
-        msg = messages.PhoxRequest('foo', version='bar')
-        self.assertRaises(AttributeError, setattr, msg, 'version', 'baz')
 
     def test_wrap_should_containt_attrib_type(self):
         root = xml.Element('phox-request')
@@ -83,7 +75,7 @@ class PhoxRequestTestCase(unittest.TestCase):
         self.assertEqual(req.type, 'foo')
 
     def test_unwrap(self):
-        msg = messages.PhoxRequest('foo', sessionid='bar',
+        msg = messages.PhoxRequest(type='foo', sessionid='bar',
                                    version='baz', buildnumber='zoo')
         data = msg.unwrap()
         self.assertEqual(data.tag, 'phox-request')
@@ -102,11 +94,11 @@ class PhoxRequestTestCase(unittest.TestCase):
 
     def test_stringify(self):
         self.assertEqual(
-            str(messages.PhoxRequest('foo')),
+            str(messages.PhoxRequest('foo')).replace(' />', '/>'),
             "<?xml version='1.0' encoding='%s'?>\n"
             '<!DOCTYPE phox-request SYSTEM "phox.dtd">\n'
             '<phox-request type="foo">'
-            '<content />'
+            '<content/>'
             '</phox-request>' % xml.ENCODING
         )
 
@@ -121,10 +113,6 @@ class PhoxResponseTestCase(unittest.TestCase):
         msg = messages.PhoxResponse(buildnumber='bar')
         self.assertEqual(msg.buildnumber, 'bar')
 
-    def test_read_only_buildnumber(self):
-        msg = messages.PhoxResponse(buildnumber='bar')
-        self.assertRaises(AttributeError, setattr, msg, 'buildnumber', 'baz')
-
     def test_unwrap(self):
         msg = messages.PhoxResponse(sessionid='bar',  buildnumber='baz')
         data = msg.unwrap()
@@ -138,11 +126,11 @@ class PhoxResponseTestCase(unittest.TestCase):
 
     def test_stringify(self):
         self.assertEqual(
-            str(messages.PhoxResponse()),
+            str(messages.PhoxResponse()).replace(' />', '/>'),
             "<?xml version='1.0' encoding='%s'?>\n"
             '<!DOCTYPE phox-response SYSTEM "phox.dtd">\n'
             '<phox-response>'
-            '<content />'
+            '<content/>'
             '</phox-response>' % xml.ENCODING
         )
 
