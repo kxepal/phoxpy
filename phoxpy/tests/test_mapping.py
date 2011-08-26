@@ -65,6 +65,17 @@ class FieldTestCase(unittest.TestCase):
         self.assertEqual(Dummy().field, 'foobar')
 
 
+class AttributeFieldTestCase(unittest.TestCase):
+    def test_set_attribute(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.AttributeField()
+        dummy = Dummy()
+        dummy.foo = 'bar'
+        elem = dummy.unwrap(xml.Element('root'))
+        self.assertTrue('foo' in elem.attrib)
+        self.assertEqual(elem.attrib['foo'], 'bar')
+
+
 class BooleanFieldTestCase(unittest.TestCase):
 
     def setUp(self):
