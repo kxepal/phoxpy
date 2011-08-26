@@ -95,6 +95,31 @@ class Field(object):
         return elem
 
 
+class AttributeField(Field):
+    """Field for Mapping attributes.
+
+    >>> class Post(Mapping):
+    ...   foo = AttributeField()
+    ...   bar = AttributeField(default='baz')
+    >>> post = Post(foo='zoo')
+    >>> post.foo
+    u'zoo'
+    >>> post['bar'] == post.bar == 'baz'
+    True
+    >>> elem = post.unwrap(xml.Element('root'))
+    >>> elem.attrib.get('foo')
+    'zoo'
+    >>> elem.attrib.get('bar')
+    'baz'
+    """
+    def to_python(self, value):
+        return value
+
+    def to_xml(self, value):
+        assert isinstance(value, basestring)
+        return unicode(value)
+
+
 class MetaMapping(type):
 
     def __new__(mcs, name, bases, data):
@@ -238,9 +263,11 @@ class Mapping(object):
         :param root: Root xml node.
         :type root: :class:`~phoxpy.xml.Element`
         """
-        for node in self._data.values():
+        for key, node in self._data.items():
             if isinstance(node, Mapping):
                 root.append(node.unwrap())
+            elif isinstance(node, unicode):
+                root.attrib[key] = node
             elif node is not None:
                 root.append(node)
         return root
