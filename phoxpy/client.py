@@ -83,7 +83,7 @@ class Session(object):
             client_id=client_id,
             **data
         )
-        self._resmsg = AuthResponse('')
+        self._resmsg = AuthResponse(sessionid='')
         self._resource = None
 
     def open(self, url, http_session=None):
@@ -131,7 +131,7 @@ class Session(object):
         """Closes current active session."""
         assert self._resource is not None, 'Session has not been activated.'
         self.request(data=PhoxRequest('logout'))
-        self._resmsg = AuthResponse('')
+        self._resmsg = AuthResponse(sessionid='')
         return True
 
     def is_active(self):

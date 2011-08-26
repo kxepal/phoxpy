@@ -8,7 +8,7 @@
 #
 
 from phoxpy import xml
-from phoxpy.mapping import GenericMapping
+from phoxpy.mapping import GenericMapping, AttributeField
 
 
 __all__ = ['Message', 'PhoxRequest', 'PhoxResponse']
@@ -19,28 +19,17 @@ class Message(GenericMapping):
     :param sessionid: Session id.
     :type sessionid: str
     """
-    def __init__(self, sessionid=None, **data):
-        self._session_id = sessionid
-        super(Message, self).__init__(**data)
+    sessionid = AttributeField()
 
     def __str__(self):
         raise NotImplementedError('Should be implemented for each message type')
-
-    def _get_sessionid(self):
-        """Session id number."""
-        return self._session_id
-
-    def _set_sessionid(self, value):
-        if value is not None and not isinstance(value, basestring):
-            raise TypeError('Invalid value type %r' % type(value))
-        self._session_id = value
-
-    sessionid = property(_get_sessionid, _set_sessionid)
 
     def unwrap(self, root=None):
         content = xml.Element('content')
         super(Message, self).unwrap(content)
         if root is not None:
+            root.attrib.update(content.attrib.items())
+            content.attrib.clear()
             root.append(content)
             return root
         return content
@@ -61,33 +50,21 @@ class PhoxRequest(Message):
     :param version: Server version number.
     :type version: str
     """
-    def __init__(self, msgtype, sessionid=None, buildnumber=None, version=None,
-                 **data):
-        self._type = msgtype
-        self._buildnumber = buildnumber
-        self._version = version
-        super(PhoxRequest, self).__init__(sessionid, **data)
+    type = AttributeField()
+    buildnumber = AttributeField()
+    version = AttributeField()
+
+    def __init__(self, type, **data):
+        super(PhoxRequest, self).__init__(type=type, **data)
+        assert self.type is not None
 
     def __str__(self):
         doctype = ('phox-request', 'SYSTEM', 'phox.dtd')
         return xml.dump(self.unwrap(), doctype=doctype)
 
-    @property
-    def type(self):
-        """Request message type."""
-        return self._type
-
-    @property
-    def buildnumber(self):
-        return self._buildnumber
-
-    @property
-    def version(self):
-        return self._version
-
     @classmethod
     def wrap(cls, xmlsrc, **defaults):
-        defaults.setdefault('msgtype', xmlsrc.attrib['type'])
+        defaults.setdefault('type', xmlsrc.attrib['type'])
         defaults.setdefault('sessionid', xmlsrc.attrib.get('sessionid'))
         defaults.setdefault('buildnumber', xmlsrc.attrib.get('buildnumber'))
         defaults.setdefault('version', xmlsrc.attrib.get('version'))
@@ -95,14 +72,7 @@ class PhoxRequest(Message):
         return req
 
     def unwrap(self):
-        root = xml.Element('phox-request', type=self.type)
-        if self.sessionid is not None:
-            root.attrib['sessionid'] = self.sessionid
-        if self.buildnumber is not None:
-            root.attrib['buildnumber'] = self.buildnumber
-        if self.version is not None:
-            root.attrib['version'] = self.version
-        return super(PhoxRequest, self).unwrap(root)
+        return super(PhoxRequest, self).unwrap(xml.Element('phox-request'))
 
 
 class PhoxResponse(Message):
@@ -114,17 +84,12 @@ class PhoxResponse(Message):
     :param buildnumber: Build number.
     :type buildnumber: str
     """
-    def __init__(self, sessionid=None, buildnumber=None, **data):
-        self._buildnumber = buildnumber
-        super(PhoxResponse, self).__init__(sessionid, **data)
+
+    buildnumber = AttributeField()
 
     def __str__(self):
         doctype = ('phox-response', 'SYSTEM', 'phox.dtd')
         return xml.dump(self.unwrap(), doctype=doctype)
-
-    @property
-    def buildnumber(self):
-        return self._buildnumber
 
     @classmethod
     def wrap(cls, xmlsrc):
