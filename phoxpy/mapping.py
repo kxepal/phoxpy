@@ -46,8 +46,11 @@ class Field(object):
         return value
 
     def __set__(self, instance, value):
+        if instance._data.get(self.name) is not None:
+            instance._root.remove(instance._data[self.name])
         if value is not None:
             value = self.to_xml(value)
+            instance._root.append(value)
         instance._data[self.name] = value
 
     def to_python(self, node):
@@ -112,11 +115,18 @@ class AttributeField(Field):
     >>> elem.attrib.get('bar')
     'baz'
     """
+    def __set__(self, instance, value):
+        if instance._data.get(self.name) is not None:
+            del instance._root.attrib[self.name]
+        if value is not None:
+            value = self.to_xml(value)
+            instance._root.attrib[self.name] = value
+        instance._data[self.name] = value
+
     def to_python(self, value):
         return value
 
     def to_xml(self, value):
-        assert isinstance(value, basestring)
         return unicode(value)
 
 
@@ -165,31 +175,33 @@ class Mapping(object):
     __metaclass__ = MetaMapping
 
     def __init__(self, **values):
+        self._fields = self._fields.copy()
+        self._root = xml.Element('root')
         self._data = {}
         for fieldname in self._fields:
             if fieldname in values:
-                setattr(self, fieldname, values.pop(fieldname))
+                self[fieldname] = values.pop(fieldname)
             else:
-                setattr(self, fieldname, getattr(self, fieldname))
-        if values:
-            raise ValueError('Unexpected kwargs found: %r' % values)
+                self[fieldname] = self[fieldname]
+        self.update(values)
 
-    def __getitem__(self, item):
-        field = self._get_field(item)
-        elem = self._data[field.name]
-        if elem is None:
-            return None
-        return field.to_python(elem)
+    def __getitem__(self, key):
+        attrname, field = self._get_field(key)
+        if field is None:
+            raise KeyError(key)
+        return field.__get__(self, None)
 
     def __setitem__(self, key, value):
-        field = self._get_field(key)
-        if value is not None:
-            value = field.to_xml(value)
-        self._data[field.name] = value
+        attrname, field = self._get_field(key)
+        if field is None:
+            field = self._set_field(key, value)
+        field.__set__(self, value)
 
     def __delitem__(self, key):
-        field = self._get_field(key)
-        self._data[field.name] = None
+        attrname, field = self._get_field(key)
+        if field is None:
+            raise KeyError(key)
+        field.__set__(self, field.default)
 
     def __lt__(self, other):
         return self._to_python() < other
@@ -210,7 +222,10 @@ class Mapping(object):
         return self._to_python() > other
 
     def __contains__(self, item):
-        return item in self._fields or item in self._data
+        if isinstance(item, basestring):
+            return item in self._fields or item in self._data
+        else:
+            return item in list(self._root)
 
     def __iter__(self):
         return self.keys()
@@ -220,13 +235,21 @@ class Mapping(object):
 
     def _get_field(self, key):
         if key in self._fields:
-            return self._fields[key]
-        elif key in self._data:
-            for field in self._fields.values():
-                if field.name == key:
-                    return field
-        else:
-            raise KeyError('Unknown field %r' % key)
+            return key, self._fields[key]
+        for name, field in self._fields.items():
+            if field.name == key:
+                return name, field
+        return key, None
+
+    def _set_field(self, name, value):
+        field = gen_field_by_value(name, value)
+        self._fields[name] = field
+        if self._data.get(name) is not None:
+            self._root.remove(self._data[name])
+        elem = field.to_xml(value)
+        self._data[name] = elem
+        self._root.append(elem)
+        return field
 
     @classmethod
     def build(cls, **d):
@@ -241,43 +264,52 @@ class Mapping(object):
         return type('AnonymousMapping', (cls,), d)
 
     @classmethod
-    def wrap(cls, xmlsrc, **defaults):
+    def wrap(cls, xmlelem, **defaults):
         """Wrap :class:`~phoxpy.xml.Element` or :class:`~phoxpy.xml.ElementTree`
         instance and map elements to related fields by name.
         """
-        if not isinstance(xmlsrc, (xml.ElementType, xml.ElementTreeType)):
-            raise TypeError('Invalid xml data %r' % xmlsrc)
+        if not isinstance(xmlelem, (xml.ElementType, xml.ElementTreeType)):
+            raise TypeError('Invalid xml data %r' % xmlelem)
+        if isinstance(xmlelem, xml.ElementTreeType):
+            root = xmlelem.getroot()
+        else:
+            root = xmlelem
         instance = cls(**defaults)
-        if isinstance(xmlsrc, xml.ElementType):
-            xmlsrc = xml.ElementTree(xmlsrc)
-        for node in xmlsrc.getroot():
-            if not 'n' in node.attrib:
-                xmlstr = xml.dump(xmlsrc)
-                raise ValueError('Unnamed field %r\n%s' % (xmlsrc, xmlstr))
-            instance._data[node.attrib['n']] = node
+        for idx in range(len(root)):
+            elem = root[idx]
+            fname = elem.attrib.get('n')
+            if fname is None:
+                raise ValueError('Unnamed node %s' % elem)
+            elif fname in instance._fields:
+                instance[fname] = instance._fields[fname].to_python(elem)
+            else:
+                for field in instance._fields.values():
+                    if field.name == fname:
+                        instance[fname] = field.to_python(elem)
+                        break
+                else:
+                    field = gen_field_by_xmlelem(elem)
+                    value = field.to_python(elem)
+                    instance[field.name] = value
+        for key, value in root.attrib.items():
+            if key in instance._fields:
+                instance[key] = instance._fields[key].to_python(value)
+            elif key not in ['n', 't', 'i']:
+                field = AttributeField(name=key)
+                value = field.to_python(value)
+                instance[field.name] = value
         return instance
 
-    def unwrap(self, root):
-        """Unwraps mapping instance to XML object.
-
-        :param root: Root xml node.
-        :type root: :class:`~phoxpy.xml.Element`
-        """
-        for key, node in self._data.items():
-            if isinstance(node, Mapping):
-                root.append(node.unwrap())
-            elif isinstance(node, unicode):
-                root.attrib[key] = node
-            elif node is not None:
-                root.append(node)
-        return root
+    def unwrap(self, xmlelem):
+        """Unwraps mapping instance to XML object."""
+        for idx in range(len(self._root)):
+            xmlelem.append(copy.deepcopy(self._root[idx]))
+        xmlelem.attrib.update(self._root.attrib.items())
+        return xmlelem
 
     def copy(self):
         """Creates a shallow copy of mapping."""
-        instance = type(self)()
-        for name, node in self._data.items():
-            instance._data[name] = copy.deepcopy(node)
-        return instance
+        return type(self).wrap(copy.deepcopy(self._root))
 
     def get(self, key, default=None):
         """Returns data by `key` or `default` if missing."""
@@ -288,13 +320,13 @@ class Mapping(object):
 
     def keys(self):
         """Iterate over field names."""
-        for key in self._data:
+        for key in self._fields:
             yield key
 
     def values(self):
         """Iterate over field values."""
-        for key in self._data:
-            yield self[key]
+        for node in self._root:
+            yield self._fields[node.attrib['n']].to_python(node)
 
     def items(self):
         """Iterate over field (name, value) pairs."""
@@ -311,94 +343,16 @@ class Mapping(object):
         :raises:
             :exc:`KeyError`: If field not found by `key` argument.
         """
-        field = self._get_field(key)
+        attrname, field = self._get_field(key)
+        if field is None:
+            raise KeyError(key)
         field.default = value
-        if self._data[key] is None:
-            self[key] = value
+        self[key] = value
 
     def update(self, data):
         """Batch update fields data."""
         for key, value in data.items():
             self[key] = value
-
-
-class GenericMapping(Mapping):
-    """Generic mapping provides more flexible scheme construction
-    with on fly field creation.
-
-    >>> class Post(GenericMapping):
-    ...   pass
-    >>> post = Post(foo='zoo', bar=42, baz=False)
-    >>> post['foo']
-    'zoo'
-    >>> post['bar']
-    42
-    >>> post['baz']
-    False
-    """
-    def __init__(self, **values):
-        self._fields = dict(self._fields)
-        self._data = {}
-        for fieldname in self._fields:
-            if fieldname in values:
-                setattr(self, fieldname, values.pop(fieldname))
-            elif hasattr(self, fieldname):
-                setattr(self, fieldname, getattr(self, fieldname))
-        for name, value in values.items():
-            self[name] = value
-
-    def __setitem__(self, key, value):
-        if not (key in self._fields or key in self._data):
-            self._set_field(key, value)
-        super(GenericMapping, self).__setitem__(key, value)
-
-    def _set_field(self, key, value):
-        field = gen_field_by_value(key, value)
-        self._fields[key] = field
-        self._data[key] = field.to_xml(value)
-
-    def __delitem__(self, key):
-        field = self._get_field(key)
-        if hasattr(self, key) or hasattr(self, field.name):
-            self._data[field.name] = None
-        else:
-            del self._fields[key]
-            del self._data[field.name]
-
-    @classmethod
-    def wrap(cls, xmlsrc, **defaults):
-        """Wrap xml data to mapping fields by node `n` attribute. If no field
-        matched new one will be created to fit serialized value.
-
-        :param xmlsrc: XML source object.
-        :type xmlsrc: :class:`~phoxpy.xml.Element`
-                      or :class:`~phoxpy.xml.ElementTree`
-
-        :return: Mapping instance with wrapped data.
-        :rtype: :class:`~phoxpy.mapping.GenericMapping`
-
-        :raise:
-            :exc:`ValueError`: If there is not field to fit xml element value.
-        """
-        if not isinstance(xmlsrc, (xml.ElementType, xml.ElementTreeType)):
-            raise TypeError('Invalid xml data %r' % xmlsrc)
-        instance = cls(**defaults)
-        if isinstance(xmlsrc, xml.ElementType):
-            xmlsrc = xml.ElementTree(xmlsrc)
-        for node in xmlsrc.getroot():
-            if not 'n' in node.attrib:
-                xmlstr = xml.dump(xmlsrc)
-                raise ValueError('Unnamed field %r\n%s' % (xmlsrc, xmlstr))
-            fname = node.attrib['n']
-            instance._data[fname] = node
-            instance._fields[fname] = gen_field_by_xmlelem(node)
-        return instance
-
-    def setdefault(self, key, value):
-        """Sets default value to specified field by name."""
-        if not (key in self._fields or key in self._data):
-            self._set_field(key, value)
-        super(GenericMapping, self).setdefault(key, value)
 
 
 class BooleanField(Field):
@@ -742,7 +696,9 @@ class ListField(Field):
             elem = copy.deepcopy(self.list)
             val = ListField(self.field).to_python(elem)
             if other < 1:
+                attribs = dict(elem.attrib.items())
                 elem.clear()
+                elem.attrib.update(attribs)
             elif other > 1:
                 for seq in repeat(self, other - 1):
                     val.extend(seq)
@@ -750,7 +706,9 @@ class ListField(Field):
 
         def __imul__(self, other):
             if other < 1:
+                attribs = dict(self.list.attrib.items())
                 self.list.clear()
+                self.list.attrib.update(attribs)
             elif other > 1:
                 for seq in repeat(list(self), other - 1):
                     self.extend(seq)
@@ -861,7 +819,9 @@ class ListField(Field):
 
         def sort(self, cmp=None, key=None, reverse=False):
             vals = list(sorted(self, cmp, key, reverse))
+            attribs = dict(self.list.attrib.items())
             self.list.clear()
+            self.list.attrib.update(attribs)
             for i in vals:
                 self.append(i)
 
@@ -938,11 +898,11 @@ class ObjectField(Field):
         super(ObjectField, self).__init__(name, default=default.copy)
 
     def to_python(self, node):
-        return self.mapping.wrap(xml.ElementTree(node))
+        return self.mapping.wrap(node)
 
     def to_xml(self, value):
         if isinstance(value, Mapping):
-            value = value._data
+            value = dict(value.items())
         if not isinstance(value, dict):
             raise TypeError('Mapping or dict value expected, got %r' % value)
         root = xml.Element('o')
@@ -978,6 +938,8 @@ FIELDS_BY_XML_ATTRS = {
 }
 
 def gen_field_by_value(name, value):
+    if isinstance(value, Mapping):
+        value = dict(value.items())
     fieldcls = FIELDS_BY_PYTYPE.get(type(value), None)
     if fieldcls is None:
         raise TypeError('Could not map value %r (%s) to any known field'
@@ -989,10 +951,7 @@ def gen_field_by_value(name, value):
             itemfield = FIELDS_BY_PYTYPE[str]()
         field = fieldcls(itemfield, name=name)
     elif fieldcls is ObjectField:
-        d = {}
-        for key, item in value.items():
-            d[key] = gen_field_by_value(key, item)
-        field = fieldcls(GenericMapping.build(**d), name=name)
+        field = fieldcls(Mapping.build(), name=name)
     else:
         field = fieldcls(name=name)
     return field
@@ -1005,7 +964,7 @@ def gen_field_by_xmlelem(elem):
         if not attrs:
             break
         for key, value in attrs.items():
-            if elem.attrib[key] != value:
+            if key in elem.attrib and elem.attrib[key] != value:
                 break
         else:
             break
@@ -1018,10 +977,6 @@ def gen_field_by_xmlelem(elem):
         else:
             return fieldcls(TextField(), name=fname)
     elif fieldcls is ObjectField:
-        d = {}
-        for subelem in elem:
-            field = gen_field_by_xmlelem(subelem)
-            d[field.name] = field
-        return fieldcls(GenericMapping.build(**d), name=fname)
+        return fieldcls(Mapping.build(), name=fname)
     else:
         return fieldcls(name=fname)
