@@ -8,12 +8,12 @@
 #
 
 from phoxpy import xml
-from phoxpy.mapping import GenericMapping, AttributeField
+from phoxpy.mapping import Mapping, AttributeField
 
 
 __all__ = ['Message', 'PhoxRequest', 'PhoxResponse']
 
-class Message(GenericMapping):
+class Message(Mapping):
     """Base communication message mapping.
 
     :param sessionid: Session id.
