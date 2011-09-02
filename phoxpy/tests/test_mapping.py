@@ -287,6 +287,10 @@ class DateTimeFieldTestCase(unittest.TestCase):
         value = self.field.to_xml(datetime.datetime(2009, 02, 14, 02, 31, 30))
         self.assertEqual(value.attrib.get('v'), '14.02.2009 02:31:30')
 
+    def test_set_date_value(self):
+        value = self.field.to_xml(datetime.date(2009, 02, 14))
+        self.assertEqual(value.attrib.get('v'), '14.02.2009 00:00:00')
+
     def test_fail_set_invalid_value(self):
         self.assertRaises(TypeError, self.field.to_xml, '14.02.2009 02:31:30')
 

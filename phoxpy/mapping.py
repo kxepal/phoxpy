@@ -617,7 +617,7 @@ class DateTimeField(Field):
         >>> elem.attrib['v']
         '14.02.2010 02:31:30'
         """
-        if not isinstance(value, datetime.datetime):
+        if not isinstance(value, (datetime.datetime, datetime.date)):
             raise TypeError('Datetime value expected, got %r' % value)
         elem = super(DateTimeField, self).to_xml(value.strftime(self.format))
         elem.attrib['t'] = 'D'
