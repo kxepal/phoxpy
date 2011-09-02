@@ -16,7 +16,7 @@ from phoxpy import xml
 class MessageTestCase(unittest.TestCase):
 
     def test_generic_message(self):
-        self.assertTrue(isinstance(messages.Message(), mapping.GenericMapping))
+        self.assertTrue(isinstance(messages.Message(), mapping.Mapping))
 
     def test_abstract_to_string_serialization(self):
         class Post(messages.Message):
