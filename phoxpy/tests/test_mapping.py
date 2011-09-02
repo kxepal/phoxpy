@@ -66,14 +66,28 @@ class FieldTestCase(unittest.TestCase):
 
 
 class AttributeFieldTestCase(unittest.TestCase):
+
     def test_set_attribute(self):
         class Dummy(mapping.Mapping):
             foo = mapping.AttributeField()
-        dummy = Dummy()
-        dummy.foo = 'bar'
-        elem = dummy.unwrap(xml.Element('root'))
+        obj = Dummy()
+        obj.foo = 'bar'
+        self.assertEqual(obj.foo, 'bar')
+        elem = obj.unwrap(xml.Element('root'))
         self.assertTrue('foo' in elem.attrib)
         self.assertEqual(elem.attrib['foo'], 'bar')
+
+    def test_object_attribute(self):
+        class Foo(mapping.Mapping):
+            bar = mapping.AttributeField()
+
+        class Dummy(mapping.Mapping):
+            foo = mapping.ObjectField(mapping.Mapping.build(
+                bar = mapping.AttributeField()
+            ))
+        obj = Dummy()
+        obj['foo'] = {'bar': 'baz'}
+        self.assertEqual(obj.foo.bar, 'baz')
 
 
 class BooleanFieldTestCase(unittest.TestCase):
@@ -396,27 +410,27 @@ class ListFieldTestCase(unittest.TestCase):
     def test_proxy_contains(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[i for i in range(5)])
+        obj = Dummy(numbers= [i for i in range(5)])
         self.assertTrue(3 in obj.numbers)
         self.assertTrue(6 not in obj.numbers)
 
     def test_proxy_count(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.FloatField())
-        obj = Dummy(numbers=[1.0, 2.0, 2.5])
+        obj = Dummy(numbers= [1.0, 2.0, 2.5])
         self.assertEqual(1, obj.numbers.count(1.0))
         self.assertEqual(0, obj.numbers.count(3.0))
 
     def test_proxy_index(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.FloatField())
-        obj = Dummy(numbers=[1.0, 2.0, 2.5])
+        obj = Dummy(numbers= [1.0, 2.0, 2.5])
         self.assertEqual(0, obj.numbers.index(1.0))
 
     def test_proxy_index_range(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.FloatField())
-        obj = Dummy(numbers=[1.0, 2.0, 2.5])
+        obj = Dummy(numbers= [1.0, 2.0, 2.5])
         self.assertEqual(1, obj.numbers.index(2.0, 1, 2))
 
     def test_fail_proxy_index_for_nonexisted_element(self):
@@ -480,14 +494,14 @@ class ListFieldTestCase(unittest.TestCase):
     def test_proxy_sort(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.ListField(mapping.IntegerField()))
-        obj = Dummy(numbers=[[4, 2], [2, 3], [0, 1]])
+        obj = Dummy(numbers= [[4, 2], [2, 3], [0, 1]])
         obj.numbers.sort()
         self.assertEqual(obj.numbers, [[0, 1], [2, 3], [4, 2]])
 
     def test_proxy_lt(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[1, 2, 3])
+        obj = Dummy(numbers= [1, 2, 3])
         self.assertTrue(obj.numbers < [4, 5, 6])
 
     def test_proxy_lt_with_other_proxy(self):
@@ -500,7 +514,7 @@ class ListFieldTestCase(unittest.TestCase):
     def test_proxy_le(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[1, 2, 3])
+        obj = Dummy(numbers= [1, 2, 3])
         self.assertTrue(obj.numbers <= [1, 2, 3])
 
     def test_proxy_le_with_other_proxy(self):
@@ -513,7 +527,7 @@ class ListFieldTestCase(unittest.TestCase):
     def test_proxy_eq(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[1, 2, 3])
+        obj = Dummy(numbers= [1, 2, 3])
         self.assertTrue(obj.numbers == [1, 2, 3])
 
     def test_proxy_eq_with_other_proxy(self):
@@ -526,7 +540,7 @@ class ListFieldTestCase(unittest.TestCase):
     def test_proxy_ne(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[1, 2, 3])
+        obj = Dummy(numbers= [1, 2, 3])
         self.assertTrue(obj.numbers != [4, 5, 6])
 
     def test_proxy_ne_with_other_proxy(self):
@@ -539,7 +553,7 @@ class ListFieldTestCase(unittest.TestCase):
     def test_proxy_ge(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[1, 2, 3])
+        obj = Dummy(numbers= [1, 2, 3])
         self.assertTrue(obj.numbers >= [1, 2, 3])
 
     def test_proxy_ge_with_other_proxy(self):
@@ -552,7 +566,7 @@ class ListFieldTestCase(unittest.TestCase):
     def test_proxy_gt(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[1, 2, 3])
+        obj = Dummy(numbers= [1, 2, 3])
         self.assertTrue(obj.numbers > [0, 1, 2])
 
     def test_proxy_gt_with_other_proxy(self):
@@ -614,21 +628,21 @@ class ListFieldTestCase(unittest.TestCase):
     def test_proxy_imul(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[1, 2, 3])
+        obj = Dummy(numbers= [1, 2, 3])
         obj.numbers *= 2
         self.assertEqual(obj.numbers, [1, 2, 3, 1, 2, 3])
 
     def test_proxy_imul_one(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[1, 2, 3])
+        obj = Dummy(numbers= [1, 2, 3])
         obj.numbers *= 1
         self.assertEqual(obj.numbers, [1, 2, 3])
 
     def test_proxy_imul_zero(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.IntegerField())
-        obj = Dummy(numbers=[1, 2, 3])
+        obj = Dummy(numbers= [1, 2, 3])
         obj.numbers *= 0
         self.assertEqual(obj.numbers, [])
 
@@ -651,7 +665,6 @@ class MappingTestCase(unittest.TestCase):
         class Dummy(mapping.Mapping):
             field = mapping.Field(name='foo', default='bar')
         obj = Dummy()
-        self.assertEqual(obj['field'], 'bar')
         self.assertEqual(obj['foo'], 'bar')
 
     def test_getitem_unknown_name(self):
@@ -662,9 +675,6 @@ class MappingTestCase(unittest.TestCase):
             field = mapping.Field(name='foo')
         obj = Dummy()
         self.assertEqual(obj['foo'], None)
-
-    def test_setitem_unknown_name(self):
-        self.assertRaises(KeyError, mapping.Mapping().__setitem__, 'foo', 'bar')
 
     def test_setitem(self):
         class Dummy(mapping.Mapping):
@@ -696,9 +706,18 @@ class MappingTestCase(unittest.TestCase):
     def test_delitem_custom_name(self):
         class Dummy(mapping.Mapping):
             field = mapping.Field(name='foo')
-        obj = Dummy(field='hello')
+        obj = Dummy()
+        obj.field = 'hello'
         del obj['foo']
         self.assertEqual(obj.field, None)
+
+    def test_delitem_sets_default_value(self):
+        class Dummy(mapping.Mapping):
+            field = mapping.Field(default='foo')
+        obj = Dummy()
+        obj.field = 'bar'
+        del obj['field']
+        self.assertEqual(obj.field, 'foo')
 
     def test_copy(self):
         class Dummy(mapping.Mapping):
@@ -899,129 +918,44 @@ class MappingTestCase(unittest.TestCase):
         obj = Dummy()
         self.assertEqual(sorted(iter(obj)), sorted(obj.keys()))
 
-
-class GenericMappingTestCase(unittest.TestCase):
-
-    def test_delitem_couldnt_remove_schema_fields(self):
-        class Dummy(mapping.GenericMapping):
-            foo = mapping.TextField()
-        dummy = Dummy()
-        del dummy['foo']
-        self.assertEqual(dummy['foo'], None)
-        self.assertEqual(dummy.foo, None)
-
-    def test_delitem_removes_custom_field(self):
-        class Dummy(mapping.GenericMapping):
+    def test_init_custom_field(self):
+        class Dummy(mapping.Mapping):
             pass
-        dummy = Dummy()
-        dummy['foo'] = 'bar'
-        del dummy['foo']
-        self.assertRaises(KeyError, dummy.__getitem__, 'foo')
-
-    def test_setdefault(self):
-        class Dummy(mapping.GenericMapping):
-            foo = mapping.TextField()
-        obj = Dummy()
-        obj.setdefault('baz', 'bar')
-        self.assertEqual(obj['baz'], 'bar')
-
-    def test_add_new_fields_via_constructor(self):
-        obj = mapping.GenericMapping(foo='bar')
-        self.assertTrue(isinstance(obj._fields['foo'], mapping.TextField))
+        obj = Dummy(foo='bar')
         self.assertEqual(obj['foo'], 'bar')
 
-    def test_add_new_fields_via_dict_interface(self):
-        class Post(mapping.GenericMapping):
-            foo = mapping.TextField()
-        obj = Post(foo='bar')
-        obj['bar'] = 'baz'
-        self.assertTrue(isinstance(obj._fields['bar'], mapping.TextField))
-        self.assertEqual(obj['bar'], 'baz')
-
-    def test_add_list_field(self):
-        obj = mapping.GenericMapping()
-        obj['foo'] = ['bar', 'baz']
-        self.assertTrue(isinstance(obj._fields['foo'], mapping.ListField))
-        self.assertEqual(obj['foo'], ['bar', 'baz'])
-
-    def test_add_object_field(self):
-        obj = mapping.GenericMapping()
-        obj['foo'] = {'bar': 'baz'}
-        self.assertTrue(isinstance(obj._fields['foo'], mapping.ObjectField))
-        self.assertEqual(obj['foo'], {'bar': 'baz'})
-
-    def test_list_with_text_field_as_default(self):
-        obj = mapping.GenericMapping()
-        obj['foo'] = []
-        self.assertTrue(isinstance(obj._fields['foo'], mapping.ListField))
-        obj['foo'] = ['bar', 'baz']
-        self.assertEqual(obj['foo'], ['bar', 'baz'])
-        self.assertRaises(TypeError, obj.__setitem__, 'foo', [1, 2, 3])
-
-    def test_fail_map_unknown_type(self):
-        obj = mapping.GenericMapping()
-        self.assertRaises(TypeError, obj.__setitem__, 'foo', object())
-        self.assertRaises(TypeError, obj.__setitem__, 'foo', [object()])
-
-    def test_wrap(self):
-        class Post(mapping.Mapping):
-            author = mapping.TextField(default='foo')
-            content = mapping.TextField(default='bar')
-            posted_at = mapping.DateTimeField(
-                            default=datetime.datetime(2010, 2, 14, 2, 31, 30)
-                        )
-        post = Post()
-        obj = mapping.GenericMapping.wrap(post.unwrap(xml.Element('root')))
-        self.assertEqual(obj['author'], post.author)
-        self.assertEqual(obj['content'], post.content)
-        self.assertEqual(obj['posted_at'], post.posted_at)
-
-    def test_wrap_list_field(self):
+    def test_set_custom_field(self):
         class Dummy(mapping.Mapping):
-            numbers = mapping.ListField(mapping.IntegerField())
-        dummy = Dummy(numbers=[1, 2, 3])
-        obj = mapping.GenericMapping.wrap(dummy.unwrap(xml.Element('dummy')))
-        self.assertEqual(obj['numbers'], dummy.numbers)
+            pass
+        obj = Dummy(foo={'bar': 'baz'})
+        self.assertEqual(obj['foo'], {'bar': 'baz'})
+        self.assertEqual(obj['foo']['bar'], 'baz')
 
-    def test_wrap_empty_list(self):
-        root = xml.Element('root')
-        root.append(xml.Element('s', n='foo'))
-        obj = mapping.GenericMapping.wrap(root)
+    def test_set_custom_complex_field(self):
+        class Dummy(mapping.Mapping):
+            pass
+        obj = Dummy()
+        obj['foo'] = [{'bar': 'baz'}, {'boo': 42}]
+        self.assertEqual(obj['foo'][0], {'bar': 'baz'})
+        self.assertEqual(obj['foo'][1], {'boo': 42})
+
+    def test_del_custom_field(self):
+        class Dummy(mapping.Mapping):
+            pass
+        obj = Dummy()
+        self.assertRaises(KeyError, obj.__getitem__, 'foo')
+        obj['foo'] = [1, 2, 42]
+        self.assertEqual(obj['foo'][2], 42)
+        del obj['foo']
         self.assertEqual(obj['foo'], [])
-        obj['foo'].append('bar')
-        self.assertEqual(obj['foo'], ['bar'])
-        self.assertRaises(TypeError, obj['foo'].append, 42)
 
-    def test_wrap_object(self):
-        root = xml.Element('root')
-        obj = xml.Element('o', n='foo')
-        obj.append(xml.Element('f', n='bar', t='S', v='baz'))
-        root.append(obj)
-        dummy = mapping.GenericMapping.wrap(root)
-        self.assertEqual(dummy['foo']['bar'], 'baz')
-
-    def test_fail_wrap_unknown_field(self):
-        root = xml.Element('root')
-        root.append(xml.Element('f', t='U', n='foo'))
-        self.assertRaises(ValueError, mapping.GenericMapping.wrap, root)
-
-        root = xml.Element('root')
-        root.append(xml.Element('foo', t='bar', n='baz'))
-        self.assertRaises(ValueError, mapping.GenericMapping.wrap, root)
-
-    def test_fail_wrap_unnamed_field(self):
-        root = xml.Element('root')
-        root.append(xml.Element('f', t='I'))
-        self.assertRaises(ValueError, mapping.GenericMapping.wrap, root)
-
-    def test_set_list_of_dict_field(self):
-        dummy = mapping.GenericMapping()
-        dummy['foo'] = [{'bar': 'baz'}]
-
-    def test_set_dict_of_list_field(self):
-        dummy = mapping.GenericMapping()
-        dummy['foo'] = {'bar': [{'baz': [{}, {}, {}]}]}
-
+    def test_wrap_nested_dicts_and_lists(self):
+        class Dummy(mapping.Mapping):
+            pass
+        obj = Dummy(foo={'foo': [{}]})
+        root = obj.unwrap(xml.Element('root'))
+        obj2 = Dummy.wrap(root)
+        self.assertEqual(obj2['foo'], {'foo': [{}]})
 
 class ObjectFieldTestCase(unittest.TestCase):
 
@@ -1073,6 +1007,16 @@ class ObjectFieldTestCase(unittest.TestCase):
             numbers = mapping.ListField(mapping.IntegerField())
         ), name='baz')
         self.assertRaises(TypeError, field.to_xml, [1, 2, 42])
+
+    def test_with_mapping(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.ObjectField(mapping.Mapping.build(
+                bar = mapping.TextField()
+            ))
+        obj = Dummy(foo={'bar': 'baz'})
+        obj.foo.bar = 'baz'
+        self.assertEqual(obj.foo.bar, 'baz')
+        self.assertEqual(obj['foo']['bar'], 'baz')
 
 
 if __name__ == '__main__':
