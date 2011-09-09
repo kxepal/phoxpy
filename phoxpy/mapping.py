@@ -230,6 +230,9 @@ class Mapping(object):
     def __iter__(self):
         return self.keys()
 
+    def __repr__(self):
+        return '<%s %s %s>' % (type(self).__name__, self._root, dict(self.items()))
+
     def _to_python(self):
         return dict(self.items())
 
