@@ -1017,7 +1017,7 @@ class ObjectFieldTestCase(unittest.TestCase):
             foo = mapping.ObjectField(mapping.Mapping.build(
                 bar = mapping.TextField()
             ))
-        obj = Dummy(foo={'bar': 'baz'})
+        obj = Dummy()
         obj.foo.bar = 'baz'
         self.assertEqual(obj.foo.bar, 'baz')
         self.assertEqual(obj['foo']['bar'], 'baz')
