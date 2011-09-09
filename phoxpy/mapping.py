@@ -301,6 +301,7 @@ class Mapping(object):
                 field = AttributeField(name=key)
                 value = field.to_python(value)
                 instance[field.name] = value
+        instance._root = root
         return instance
 
     def unwrap(self, xmlelem):
