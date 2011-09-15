@@ -277,30 +277,8 @@ class Mapping(object):
             root = xmlelem.getroot()
         else:
             root = xmlelem
+        defaults.update(gen_dict_by_xml(root, **cls._fields))
         instance = cls(**defaults)
-        for idx in range(len(root)):
-            elem = root[idx]
-            fname = elem.attrib.get('n')
-            if fname is None:
-                raise ValueError('Unnamed node %s' % elem)
-            elif fname in instance._fields:
-                instance[fname] = instance._fields[fname].to_python(elem)
-            else:
-                for field in instance._fields.values():
-                    if field.name == fname:
-                        instance[fname] = field.to_python(elem)
-                        break
-                else:
-                    field = gen_field_by_xmlelem(elem)
-                    value = field.to_python(elem)
-                    instance[field.name] = value
-        for key, value in root.attrib.items():
-            if key in instance._fields:
-                instance[key] = instance._fields[key].to_python(value)
-            elif key not in ['n', 't', 'i']:
-                field = AttributeField(name=key)
-                value = field.to_python(value)
-                instance[field.name] = value
         instance._root = root
         return instance
 
@@ -940,6 +918,35 @@ FIELDS_BY_XML_ATTRS = {
     ListField: ('s', {}),
     ObjectField: ('o', {}),
 }
+
+def gen_dict_by_xml(root, **fields):
+    data = {}
+    for idx in range(len(root)):
+        elem = root[idx]
+        fname = elem.attrib.get('n')
+        if fname is None:
+            raise ValueError('Unnamed node %s' % elem)
+        elif fname in fields:
+            data[fname] = fields[fname].to_python(elem)
+        else:
+            for field in fields.values():
+                if field.name == fname:
+                    data[fname] = field.to_python(elem)
+                    break
+            else:
+                field = gen_field_by_xmlelem(elem)
+                value = field.to_python(elem)
+                data[field.name] = value
+    for key, value in root.attrib.items():
+        if key in ['n', 't', 'i']:
+            continue
+        if key in fields:
+            data[key] = fields[key].to_python(value)
+        else:
+            field = AttributeField(name=key)
+            value = field.to_python(value)
+            data[field.name] = value
+    return data
 
 def gen_field_by_value(name, value):
     if isinstance(value, Mapping):
