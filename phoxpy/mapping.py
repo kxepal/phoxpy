@@ -282,12 +282,24 @@ class Mapping(object):
         instance._root = root
         return instance
 
-    def unwrap(self, xmlelem):
-        """Unwraps mapping instance to XML object."""
+    def unwrap(self, root, content=None):
+        """Unwraps mapping instance to XML object.
+
+        :param root: Root element which will get all available attributes.
+        :type root: :class:`~phoxpy.xml.Element`
+
+        :param content: Element which
+        :type content: :class:`~phoxpy.xml.Element`
+
+        :return: root element
+        :rtype: :class:`~phoxpy.xml.Element`
+        """
+        if content is None:
+            content = root
         for idx in range(len(self._root)):
-            xmlelem.append(copy.deepcopy(self._root[idx]))
-        xmlelem.attrib.update(self._root.attrib.items())
-        return xmlelem
+            content.append(copy.deepcopy(self._root[idx]))
+        root.attrib.update(self._root.attrib.items())
+        return root
 
     def copy(self):
         """Creates a shallow copy of mapping."""

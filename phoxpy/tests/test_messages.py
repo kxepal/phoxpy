@@ -94,7 +94,7 @@ class PhoxRequestTestCase(unittest.TestCase):
 
     def test_stringify(self):
         self.assertEqual(
-            str(messages.PhoxRequest('foo')).replace(' />', '/>'),
+            str(messages.PhoxRequest(type='foo')).replace(' />', '/>'),
             "<?xml version='1.0' encoding='%s'?>\n"
             '<!DOCTYPE phox-request SYSTEM "phox.dtd">\n'
             '<phox-request type="foo">'
@@ -130,7 +130,7 @@ class PhoxResponseTestCase(unittest.TestCase):
             "<?xml version='1.0' encoding='%s'?>\n"
             '<!DOCTYPE phox-response SYSTEM "phox.dtd">\n'
             '<phox-response>'
-            '<content/>'
+            '<content><o/></content>'
             '</phox-response>' % xml.ENCODING
         )
 

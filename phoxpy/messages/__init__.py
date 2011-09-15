@@ -24,25 +24,19 @@ class Message(Mapping):
     def __str__(self):
         raise NotImplementedError('Should be implemented for each message type')
 
-    def unwrap(self, root=None):
-        content = xml.Element('content')
-        super(Message, self).unwrap(content)
-        if root is not None:
-            root.attrib.update(content.attrib.items())
-            content.attrib.clear()
+    def unwrap(self, root=None, content=None):
+        if root is None:
+            root = xml.Element('content')
+        elif content is None:
+            content = xml.Element('content')
             root.append(content)
-            return root
-        return content
-
+        return super(Message, self).unwrap(root, content)
 
 class PhoxRequest(Message):
     """Base request message.
 
-    :param msgtype: Message type.
-    :type msgtype: str
-
-    :param sessionid: Session id number.
-    :type sessionid: str
+    :param type: Message type.
+    :type type: str
 
     :param buildnumber: Client build number.
     :type buildnumber: str
@@ -54,8 +48,8 @@ class PhoxRequest(Message):
     buildnumber = AttributeField()
     version = AttributeField()
 
-    def __init__(self, type, **data):
-        super(PhoxRequest, self).__init__(type=type, **data)
+    def __init__(self, **data):
+        super(PhoxRequest, self).__init__(**data)
         assert self.type is not None
 
     def __str__(self):
@@ -72,14 +66,14 @@ class PhoxRequest(Message):
         return req
 
     def unwrap(self):
-        return super(PhoxRequest, self).unwrap(xml.Element('phox-request'))
+        root = xml.Element('phox-request')
+        content = xml.Element('content')
+        root.append(content)
+        return super(PhoxRequest, self).unwrap(root, content)
 
 
 class PhoxResponse(Message):
     """Base phox response message. Used as answer on phox requests messages.
-
-    :param sessionid: Session id.
-    :type sessionid: str
 
     :param buildnumber: Build number.
     :type buildnumber: str
@@ -102,14 +96,8 @@ class PhoxResponse(Message):
 
     def unwrap(self):
         root = xml.Element('phox-response')
-        if self.sessionid is not None:
-            root.attrib['sessionid'] = self.sessionid
-        if self.buildnumber is not None:
-            root.attrib['buildnumber'] = self.buildnumber
-        content =  super(PhoxResponse, self).unwrap()
-        if len(content):
-            content.tag = 'o' # content => o
-            content, obj = xml.Element('content'), content
-            content.append(obj)
+        content = xml.Element('content')
+        obj = xml.Element('o')
+        content.append(obj)
         root.append(content)
-        return root
+        return super(PhoxResponse, self).unwrap(root, obj)
