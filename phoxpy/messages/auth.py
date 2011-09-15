@@ -49,8 +49,9 @@ class AuthRequest(PhoxRequest):
     session_code = IntegerField(name='sessionCode',
                                 default=lambda: randint(10000, 20000))
 
-    def __init__(self, *args, **data):
-        super(AuthRequest, self).__init__('login', *args, **data)
+    def __init__(self, **data):
+        data['type'] = 'login'
+        super(AuthRequest, self).__init__(**data)
 
 
 class AuthResponse(PhoxResponse):
