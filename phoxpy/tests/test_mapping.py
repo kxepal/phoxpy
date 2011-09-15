@@ -961,6 +961,16 @@ class MappingTestCase(unittest.TestCase):
         obj2 = Dummy.wrap(root)
         self.assertEqual(obj2['foo'], {'foo': [{}]})
 
+    def test_to_python(self):
+        class Dummy(mapping.Mapping):
+            boo = mapping.AttributeField()
+        obj = Dummy(foo='bar', baz=3.14, zoo=[1, 2, 3], boo='test')
+        self.assertEqual(
+            obj.to_python(),
+            {'foo': 'bar', 'baz': 3.14, 'zoo': [1, 2, 3], 'boo': 'test'}
+        )
+
+
 class ObjectFieldTestCase(unittest.TestCase):
 
     def test_convert_xml_nodes_to_mapping(self):

@@ -204,22 +204,22 @@ class Mapping(object):
         field.__set__(self, field.default)
 
     def __lt__(self, other):
-        return self._to_python() < other
+        return self.to_python() < other
 
     def __le__(self, other):
-        return self._to_python() <= other
+        return self.to_python() <= other
 
     def __eq__(self, other):
-        return self._to_python() == other
+        return self.to_python() == other
 
     def __ne__(self, other):
-        return self._to_python() != other
+        return self.to_python() != other
 
     def __ge__(self, other):
-        return self._to_python() >= other
+        return self.to_python() >= other
 
     def __gt__(self, other):
-        return self._to_python() > other
+        return self.to_python() > other
 
     def __contains__(self, item):
         if isinstance(item, basestring):
@@ -233,7 +233,10 @@ class Mapping(object):
     def __repr__(self):
         return '<%s %s %s>' % (type(self).__name__, self._root, dict(self.items()))
 
-    def _to_python(self):
+    def to_xml(self, value):
+        return self.unwrap(value)
+
+    def to_python(self, value=None):
         return dict(self.items())
 
     def _get_field(self, key):
@@ -319,8 +322,8 @@ class Mapping(object):
 
     def values(self):
         """Iterate over field values."""
-        for node in self._root:
-            yield self._fields[node.attrib['n']].to_python(node)
+        for field in self._fields.values():
+            yield field.to_python(self._data[field.name])
 
     def items(self):
         """Iterate over field (name, value) pairs."""
@@ -896,7 +899,7 @@ class ObjectField(Field):
 
     def to_xml(self, value):
         if isinstance(value, Mapping):
-            value = dict(value.items())
+            value = value.to_python()
         if not isinstance(value, dict):
             raise TypeError('Mapping or dict value expected, got %r' % value)
         root = xml.Element('o')
