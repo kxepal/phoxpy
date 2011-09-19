@@ -55,10 +55,6 @@ class FieldTestCase(unittest.TestCase):
         self.assertTrue('n' in elem.attrib)
         self.assertTrue(elem.attrib['n'], 'foo')
 
-    def test_setter_fail_for_non_string_values(self):
-        f = mapping.Field()
-        self.assertRaises(TypeError, f.to_xml, 42)
-
     def test_callable_default_value(self):
         class Dummy(mapping.Mapping):
             field = mapping.Field(default=lambda: 'foobar')
@@ -78,9 +74,6 @@ class AttributeFieldTestCase(unittest.TestCase):
         self.assertEqual(elem.attrib['foo'], 'bar')
 
     def test_object_attribute(self):
-        class Foo(mapping.Mapping):
-            bar = mapping.AttributeField()
-
         class Dummy(mapping.Mapping):
             foo = mapping.ObjectField(mapping.Mapping.build(
                 bar = mapping.AttributeField()
@@ -372,11 +365,10 @@ class ListFieldTestCase(unittest.TestCase):
         f = mapping.ListField(mapping.Field())
         self.assertRaises(TypeError, f.to_xml, 42)
 
-    def test_getter_returns_list_proxy(self):
+    def test_getter_returns_list(self):
         class Dummy(mapping.Mapping):
             numbers = mapping.ListField(mapping.Field())
         obj = Dummy()
-        self.assertTrue(isinstance(obj.numbers, mapping.ListField.Proxy))
         self.assertTrue(isinstance(obj.numbers, list))
 
     def test_default_list_field(self):
@@ -586,7 +578,7 @@ class ListFieldTestCase(unittest.TestCase):
         obj = Dummy(numbers=[1, 2, 3])
         l = obj.numbers + [4, 5, 6]
         self.assertEqual(l, [1, 2, 3, 4, 5, 6])
-        self.assertTrue(isinstance(l, mapping.ListField.Proxy))
+        self.assertTrue(isinstance(l, list))
         self.assertTrue(obj.numbers is not l)
 
     def test_proxy_add_other_proxy(self):
@@ -610,7 +602,7 @@ class ListFieldTestCase(unittest.TestCase):
         obj = Dummy(numbers=[1, 2, 3])
         l = obj.numbers * 2
         self.assertEqual(l, [1, 2, 3, 1, 2, 3])
-        self.assertTrue(isinstance(l, mapping.ListField.Proxy))
+        self.assertTrue(isinstance(l, list))
         self.assertTrue(obj.numbers is not l)
         self.assertEqual(obj.numbers, [1, 2, 3])
 
@@ -627,7 +619,7 @@ class ListFieldTestCase(unittest.TestCase):
         obj = Dummy(numbers=[1, 2, 3])
         l = obj.numbers * 0
         self.assertEqual(l, [])
-        self.assertTrue(isinstance(l, mapping.ListField.Proxy))
+        self.assertTrue(isinstance(l, list))
 
     def test_proxy_imul(self):
         class Dummy(mapping.Mapping):
