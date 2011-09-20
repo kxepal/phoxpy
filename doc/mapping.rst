@@ -9,10 +9,6 @@ Mapping
 .. autoclass:: Mapping
   :members:
 
-.. autoclass:: GenericMapping
-  :show-inheritance:
-  :members:
-
 Field types
 -----------
 
@@ -48,10 +44,6 @@ Field types
   :members:
 
 .. autoclass:: ListField
-  :show-inheritance:
-  :members:
-
-.. autoclass:: phoxpy.mapping::ListField.Proxy
   :show-inheritance:
   :members:
 
