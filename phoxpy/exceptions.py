@@ -62,18 +62,10 @@ exc_by_code = \
 def get_error_class(code):
     return exc_by_code.get(code, LisBaseException)
 
-def handle_lis_error(func):
-    """Decorator that looking for LIS error message and raises exception by
-    associated error code"""
-    def wrapper(*args, **kwargs):
-        xmldata = func(*args, **kwargs)
-        error = xmldata.find('error')
-        if error is None:
-            return xmldata
-        code = error.attrib['code']
-        descr = error.attrib.get('description', '')
-        raise get_error_class(int(code))(descr.encode('utf-8'))
-    wrapper.__name__ = func.__name__
-    wrapper.__doc__ = func.__doc__
-    return wrapper
-
+def handle_lis_error(elem):
+    error = elem.find('error')
+    if error is None:
+        return elem
+    code = error.attrib['code']
+    descr = error.attrib.get('description', '')
+    raise get_error_class(int(code))(descr.encode('utf-8'))

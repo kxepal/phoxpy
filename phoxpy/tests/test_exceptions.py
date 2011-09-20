@@ -19,7 +19,7 @@ class ExceptionsTestCase(unittest.TestCase):
                 '<content><error code="500" description="foo" /></content>'
             )
         try:
-            exceptions.handle_lis_error(gen_message)()
+            exceptions.handle_lis_error(gen_message())
         except Exception, err:
             self.assertTrue(isinstance(err, exceptions.UnknownUser))
             self.assertEqual(err.args[0], 'foo')
@@ -29,7 +29,7 @@ class ExceptionsTestCase(unittest.TestCase):
             return xml.load(
                 '<content><foo bar="baz"/></content>'
             )
-        exceptions.handle_lis_error(gen_message)()
+        exceptions.handle_lis_error(gen_message())
 
     def test_undescriptable_error(self):
         def gen_message():
@@ -37,7 +37,7 @@ class ExceptionsTestCase(unittest.TestCase):
                 '<content><error code="500"/></content>'
             )
         try:
-            exceptions.handle_lis_error(gen_message)()
+            exceptions.handle_lis_error(gen_message())
         except Exception, err:
             self.assertTrue(isinstance(err, exceptions.UnknownUser))
             self.assertEqual(err.args[0], '')
