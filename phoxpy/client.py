@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+import inspect
 from phoxpy import http
 from phoxpy import xml
 from phoxpy.exceptions import handle_lis_error
@@ -139,7 +140,7 @@ class Session(object):
             body.sessionid = self.id
         if wrapper is None:
             wrapper = PhoxResponse
-        if issubclass(wrapper, Message):
+        if inspect.isclass(wrapper) and issubclass(wrapper, Message):
             wrapper = wrapper.wrap
         return wrapper(
             self._resource.post_xml(path, body, headers, **params)[2]
