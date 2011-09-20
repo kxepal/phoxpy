@@ -6,17 +6,16 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
-from itertools import izip
+
+from phoxpy import http
 from phoxpy import xml
 from phoxpy.exceptions import handle_lis_error
-from phoxpy.http import Resource
 from phoxpy.messages import Message, PhoxRequest, PhoxResponse
-from phoxpy.messages.auth import AuthRequest, AuthResponse
-
+from phoxpy.messages import auth
 
 __all__ = ['PhoxResource', 'Session']
 
-class PhoxResource(Resource):
+class PhoxResource(http.Resource):
     """Specific resource for LIS server with native xml support."""
     def __init__(self, *args, **kwargs):
         super(PhoxResource, self).__init__(*args, **kwargs)
@@ -34,12 +33,15 @@ class PhoxResource(Resource):
 
                      If body is file-like object then request would be sent
                      with `chunked` transfer encoding.
-                     
+
                      If body is :class:`~phoxpy.messages.Message` instance
                      it would be converted to string source by ``__str__``
                      method call.
-        
-        :type body: str, file, callable object
+
+                     If body is :class:`~phoxpy.xml.Element` it will be
+                     converted to string source.
+
+        :type body: str, file, callable object, :class:`~phoxpy.xml.Element`
                     or :class:`~phoxpy.messages.Message` instance.
 
         :param headers: HTTP headers dictionary.
@@ -48,7 +50,7 @@ class PhoxResource(Resource):
         :param params: Custom query parameters as keyword arguments.
 
         :return: 3-element ``tuple``:
-        
+
                  - response status code (``int``)
                  - http headers (``dict``)
                  - response data (:class:`~phoxpy.xml.Element`)
@@ -57,8 +59,10 @@ class PhoxResource(Resource):
         """
         if isinstance(body, Message):
             body = str(body)
+        elif isinstance(body, xml.ElementType):
+            body = xml.dump(body)
         status, headers, data = self.post(path, body, headers, **params)
-        return status, headers, handle_lis_error(xml.load)(data.read())
+        return status, headers, handle_lis_error(xml.load(data.read()))
 
 
 class Session(object):
@@ -77,13 +81,13 @@ class Session(object):
                  See :class:`~phoxpy.messages.AuthRequest` for more information.
     """
     def __init__(self, login, password, client_id, **data):
-        self._reqmsg = AuthRequest(
+        self._reqmsg = auth.AuthRequest(
             login=login,
             password=password,
             client_id=client_id,
             **data
         )
-        self._resmsg = AuthResponse(sessionid='')
+        self._resmsg = auth.AuthResponse(sessionid='')
         self._resource = None
 
     def open(self, url, http_session=None):
@@ -98,40 +102,54 @@ class Session(object):
         :return: self
         """
         self._resource = PhoxResource(url, session=http_session)
-        response = self.request(data=self._reqmsg)
-        self._resmsg = AuthResponse.wrap(response.unwrap())
+        self._resmsg = self.request(body=self._reqmsg, wrapper=auth.AuthResponse)
         return self
 
-    def request(self, path='', data=None, headers=None, **params):
+    def request(self, path='', body=None, headers=None, wrapper=None, **params):
         """Makes single request to server.
 
         :param path: Resource relative path.
         :type path: str
 
-        :param data: Request message instance.
-        :type data: :class:`~phoxpy.messages.PhoxRequest`
+        :param body: Request message instance or xml data.
+        :type body: :class:`~phoxpy.messages.PhoxRequest`,
+                    :class:`~phox.xml.Element`,
+                    str
 
         :param headers: HTTP headers dictionary.
         :type headers: dict
 
+        :param wrapper: Callable object or :class:`~phoxpy.messages.Message`
+                        class that will wrap returned xml data as
+                        :class:`~phoxpy.xml.Element` instance.
+                        For :class:`~phoxpy.messages.Message` classes method
+                        :meth:`~phoxpy.mapping.Mapping.wrap` is used.
+        :type wrapper: callable object or :class:`~phoxpy.messages.Message`
+                       class.
+
         :param params: Custom query parameters as keyword arguments.
+
 
         :return: Response message.
         :rtype: :class:`~phoxpy.messages.PhoxResponse`
         """
-        if data is not None and not isinstance(data, Message):
-            raise TypeError('Message instance or None expected, got %r' % data)
-        if isinstance(data, Message):
-            data.sessionid = self.id
-        return PhoxResponse.wrap(
-            self._resource.post_xml(path, data, headers, **params)[2]
+        if body is not None and not isinstance(body, Message):
+            raise TypeError('Message instance or None expected, got %r' % body)
+        if isinstance(body, Message):
+            body.sessionid = self.id
+        if wrapper is None:
+            wrapper = PhoxResponse
+        if issubclass(wrapper, Message):
+            wrapper = wrapper.wrap
+        return wrapper(
+            self._resource.post_xml(path, body, headers, **params)[2]
         )
 
     def close(self):
         """Closes current active session."""
         assert self._resource is not None, 'Session has not been activated.'
-        self.request(data=PhoxRequest('logout'))
-        self._resmsg = AuthResponse(sessionid='')
+        self.request(body=PhoxRequest(type='logout'))
+        self._resmsg = auth.AuthResponse(sessionid='')
         return True
 
     def is_active(self):
@@ -177,25 +195,3 @@ class Session(object):
     def admin_mode(self):
         """Flag of admin mode usage."""
         return bool(self._resmsg.admin_mode)
-
-
-class Collection(object):
-    """Representation of LIS data collection.
-
-    :param name: Collection name.
-    :type name: str
-
-    :param version: Current collection version.
-    :type version: int
-    """
-    def __init__(self, name, version=None):
-        self._name = name
-        self._version = version
-
-    @property
-    def name(self):
-        return self._name
-
-    @property
-    def version(self):
-        return self._version
