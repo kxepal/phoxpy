@@ -9,22 +9,20 @@
 
 import os
 import unittest
-import warnings
 
 def suite():
     suite = unittest.TestSuite()
-    warnings.simplefilter('always')
-    for root, dirs, files in os.walk(os.path.dirname(__file__)):
+    for root, dirs, files in os.walk('.'):
         for file in files:
             if not (file.startswith('test_') and file.endswith('.py')):
                 continue
             name = file.split('.')[0]
-            try:
-                mod = __import__(name)
-            except ImportError:
-                warnings.warn('Unable to run tests from module %s'
-                              '' % os.path.join(root, file), ImportWarning)
-            suite.addTests(unittest.defaultTestLoader.loadTestsFromModule(mod))
+            modname = os.path.join(root, name).replace(os.path.sep, '.')
+            modname = modname.lstrip('.')
+            tests = unittest.defaultTestLoader.loadTestsFromName(modname)
+            for test in tests:
+                suite.addTests(test)
+            print modname, ':', tests.countTestCases(), 'tests'
     return suite
 
 
