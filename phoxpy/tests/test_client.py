@@ -13,9 +13,6 @@ from phoxpy.tests.lisserver import MockHttpSession
 
 class SessionTestCase(unittest.TestCase):
 
-    def setUp(self):
-        self.session = MockHttpSession()
-
     def test_login(self):
         session = client.Session(login='John', password='Doe',
                                  client_id='foo-bar-baz')
