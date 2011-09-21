@@ -31,6 +31,7 @@ Contents
   mapping.rst
   messages.rst
   client.rst
+  modules/index.rst
   license.rst
 
 ------------------
