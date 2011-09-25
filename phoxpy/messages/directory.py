@@ -13,7 +13,8 @@ from phoxpy.mapping import Mapping, ObjectField, ListField, \
                            RefField, TextField, AttributeField
 
 __all__ = ['DirectoryLoad', 'DirectorySave', 'DirectorySaveNew',
-           'DirectoryRemove', 'DirectoryRemoveNew', 'DirectoryRestore']
+           'DirectoryRemove', 'DirectoryRemoveNew', 'DirectoryRestore',
+           'DirectoryVersions']
 
 class DirectoryRequestNewMixIn(PhoxRequest):
     """MixIn to generate XML output in required format."""
@@ -35,7 +36,7 @@ class DirectoryRequestNewMixIn(PhoxRequest):
         return req
 
 
-class DirectoryLoad(PhoxRequest):
+class DirectoryLoad(PhoxRequest, 'directory'):
     """Message for request type ``directory``.
 
     :param name: Directory data source name.
@@ -47,15 +48,8 @@ class DirectoryLoad(PhoxRequest):
     name = TextField()
     elements = ListField(RefField())
 
-    def __init__(self, name, elements=None, **data):
-        data['name'] = name
-        if elements is not None:
-            data['elements'] = elements
-        data['type'] = 'directory'
-        super(DirectoryLoad, self).__init__(**data)
 
-
-class DirectorySave(PhoxRequest):
+class DirectorySave(PhoxRequest, 'directory-save'):
     """Message for request type ``directory-save``.
 
     :param directory: Directory data source name.
@@ -67,29 +61,15 @@ class DirectorySave(PhoxRequest):
     directory = TextField()
     element = ObjectField(Mapping.build(id=AttributeField()))
 
-    def __init__(self, directory, element, **data):
-        data['directory'] = directory
-        if isinstance(element, Mapping):
-            element = element.to_python()
-        element.pop('removed', None) # This field could be received by .load()
-                                     # function, but it shouldn't pass to
-                                     # .save() one. Removing it manually is not
-                                     # very obliviously.
-        data['element'] = element
-        data['type'] = 'directory-save'
-        super(DirectorySave, self).__init__(**data)
 
-
-class DirectorySaveNew(DirectoryRequestNewMixIn, DirectorySave):
+class DirectorySaveNew(DirectoryRequestNewMixIn, DirectorySave,
+                       'directory-save-new'):
     """Message for request type ``directory-save-new``.
     Applies to only specific group of directories which are listed in
     :const:`~phoxpy.modules.directory.DIRS_FOR_NEW_PROC`."""
-    def __init__(self, *args, **data):
-        super(DirectorySaveNew, self).__init__(*args, **data)
-        self.type = 'directory-save-new'
 
 
-class DirectoryRemove(PhoxRequest):
+class DirectoryRemove(PhoxRequest, 'directory-remove'):
     """Message for request type ``directory-remove``.
 
     :param directory: Directory data source name.
@@ -101,23 +81,15 @@ class DirectoryRemove(PhoxRequest):
     directory = TextField()
     ids = ListField(RefField())
 
-    def __init__(self, directory, ids, **data):
-        data['directory'] = directory
-        data['ids'] = ids
-        data['type'] = 'directory-remove'
-        super(DirectoryRemove, self).__init__(**data)
 
-
-class DirectoryRemoveNew(DirectoryRequestNewMixIn, DirectoryRemove):
+class DirectoryRemoveNew(DirectoryRequestNewMixIn, DirectoryRemove,
+                         'directory-remove-new'):
     """Message for request type ``directory-remove-new``.
     Applies to only specific group of directories which are listed in
     :const:`~phoxpy.modules.directory.DIRS_FOR_NEW_PROC`."""
-    def __init__(self, *args, **data):
-        super(DirectoryRemoveNew, self).__init__(*args, **data)
-        self.type = 'directory-remove-new'
 
 
-class DirectoryRestore(PhoxRequest):
+class DirectoryRestore(PhoxRequest, 'directory-restore'):
     """Message for request type ``directory-restore``.
 
     :param directory: Directory data source name.
@@ -129,18 +101,6 @@ class DirectoryRestore(PhoxRequest):
     directory = TextField()
     ids = ListField(RefField())
 
-    def __init__(self, directory, ids, **data):
-        data['directory'] = directory
-        data['ids'] = ids
-        data['type'] = 'directory-restore'
-        super(DirectoryRestore, self).__init__(**data)
 
-
-class DirectoryVersions(PhoxRequest):
+class DirectoryVersions(PhoxRequest, 'directory-versions'):
     """Message for request type ``directory-versions``."""
-    directory = TextField()
-    ids = ListField(RefField())
-
-    def __init__(self, **data):
-        data['type'] = 'directory-versions'
-        super(DirectoryVersions, self).__init__(**data)
