@@ -7,16 +7,13 @@
 # you should have received as part of this distribution.
 #
 
-from phoxpy import xml
-from phoxpy.messages import PhoxRequest
-from phoxpy.mapping import Mapping, ObjectField, ListField, \
-                           RefField, TextField, AttributeField
+from phoxpy.mapping import Mapping
+from phoxpy.messages.directory import \
+    DirectoryLoad, DirectorySave, DirectorySaveNew, \
+    DirectoryRemove, DirectoryRemoveNew, DirectoryRestore, \
+    DirectoryVersions
 
-
-__all__ = ['DirectoryLoad', 'DirectorySave', 'DirectorySaveNew',
-           'DirectoryRemove', 'DirectoryRemoveNew', 'DirectoryRestore',
-           'load', 'save', 'remove', 'restore',
-           'DIRS_FOR_NEW_PROC']
+__all__ = ['DIRS_FOR_NEW_PROC', 'load', 'save', 'remove', 'restore',]
 
 #: List of directory names to which new directory message format should be
 #: applied.
@@ -29,126 +26,6 @@ DIRS_FOR_NEW_PROC = set(
      'requestCustomState', 'sampleBlank', 'userGraphics', 'userGraphicsElement',
      'wellType', 'worklistDefGroup']
 )
-
-class DirectoryRequestNewMixIn(PhoxRequest):
-    """MixIn to generate XML output in required format."""
-    def unwrap(self):
-        root = xml.Element('phox-request')
-        content = xml.Element('content')
-        obj = xml.Element('o')
-        content.append(obj)
-        root.append(content)
-        return super(PhoxRequest, self).unwrap(root, obj)
-
-    @classmethod
-    def wrap(cls, xmlsrc, **defaults):
-        defaults.setdefault('type', xmlsrc.attrib['type'])
-        defaults.setdefault('sessionid', xmlsrc.attrib.get('sessionid'))
-        defaults.setdefault('buildnumber', xmlsrc.attrib.get('buildnumber'))
-        defaults.setdefault('version', xmlsrc.attrib.get('version'))
-        req = super(PhoxRequest, cls).wrap(xmlsrc.find('content/o'), **defaults)
-        return req
-
-
-class DirectoryLoad(PhoxRequest):
-    """Message for request type ``directory``.
-
-    :param name: Directory data source name.
-    :type name: str
-
-    :param elements: List of object ids. If None all data will be requests.
-    :type elements: list of int
-    """
-    name = TextField()
-    elements = ListField(RefField())
-
-    def __init__(self, name, elements=None, **data):
-        data['name'] = name
-        if elements is not None:
-            data['elements'] = elements
-        data['type'] = 'directory'
-        super(DirectoryLoad, self).__init__(**data)
-
-
-class DirectorySave(PhoxRequest):
-    """Message for request type ``directory-save``.
-
-    :param directory: Directory data source name.
-    :type directory: str
-
-    :param element: Object mapping instance.
-    :type element: :class:`~phoxpy.mapping.Mapping`
-    """
-    directory = TextField()
-    element = ObjectField(Mapping.build(id=AttributeField()))
-
-    def __init__(self, directory, element, **data):
-        data['directory'] = directory
-        if isinstance(element, Mapping):
-            element = element.to_python()
-        element.pop('removed', None) # This field could be received by .load()
-                                     # function, but it shouldn't pass to
-                                     # .save() one. Removing it manually is not
-                                     # very obliviously.
-        data['element'] = element
-        data['type'] = 'directory-save'
-        super(DirectorySave, self).__init__(**data)
-
-
-class DirectorySaveNew(DirectoryRequestNewMixIn, DirectorySave):
-    """Message for request type ``directory-save-new``.
-    Applies to only specific group of directories which are listed in
-    :const:`~phoxpy.modules.directory.DIRS_FOR_NEW_PROC`."""
-    def __init__(self, *args, **data):
-        super(DirectorySaveNew, self).__init__(*args, **data)
-        self.type = 'directory-save-new'
-
-
-class DirectoryRemove(PhoxRequest):
-    """Message for request type ``directory-remove``.
-
-    :param directory: Directory data source name.
-    :type directory: str
-
-    :param ids: List of object ids.
-    :type ids: list
-    """
-    directory = TextField()
-    ids = ListField(RefField())
-
-    def __init__(self, directory, ids, **data):
-        data['directory'] = directory
-        data['ids'] = ids
-        data['type'] = 'directory-remove'
-        super(DirectoryRemove, self).__init__(**data)
-
-
-class DirectoryRemoveNew(DirectoryRequestNewMixIn, DirectoryRemove):
-    """Message for request type ``directory-remove-new``.
-    Applies to only specific group of directories which are listed in
-    :const:`~phoxpy.modules.directory.DIRS_FOR_NEW_PROC`."""
-    def __init__(self, *args, **data):
-        super(DirectoryRemoveNew, self).__init__(*args, **data)
-        self.type = 'directory-remove-new'
-
-
-class DirectoryRestore(PhoxRequest):
-    """Message for request type ``directory-restore``.
-
-    :param directory: Directory data source name.
-    :type directory: str
-
-    :param ids: List of object ids.
-    :type ids: list
-    """
-    directory = TextField()
-    ids = ListField(RefField())
-
-    def __init__(self, directory, ids, **data):
-        data['directory'] = directory
-        data['ids'] = ids
-        data['type'] = 'directory-restore'
-        super(DirectoryRestore, self).__init__(**data)
 
 def maybe_item_or_ids(value):
     """Helper to make no difference what have passed: directory item, single or
@@ -169,7 +46,7 @@ def list(session):
 
     :yields: 2-element tuple with directory name and his version.
     """
-    resp = session.request(body=PhoxRequest(type='directory-versions'))
+    resp = session.request(body=DirectoryVersions())
     for db in resp['versions']:
         yield db['name'], db['version']
 
@@ -188,12 +65,12 @@ def load(session, name, ids=None):
     :yields: Directory objects as dict.
     """
     ids = maybe_item_or_ids(ids)
-    resp = session.request(body=DirectoryLoad(name, elements=ids))
+    resp = session.request(body=DirectoryLoad(name=name, elements=ids))
     for item in resp[name]:
         yield item.to_python()
 
 def save(session, name, item):
-    """Store directory object on server.
+    """Stores directory object on server.
 
     :param session: Active session instance.
     :type session: :class:`~phoxpy.client.Session`
@@ -212,7 +89,13 @@ def save(session, name, item):
         messagecls = DirectorySaveNew
     else:
         messagecls = DirectorySave
-    message = messagecls(name, item)
+    if isinstance(item, Mapping):
+        item = item.to_python()
+    item.pop('removed', None) # This field could be received by .load()
+                              # function, but it shouldn't pass to
+                              # .save() one. Removing it manually is not
+                              # very obliviously.
+    message = messagecls(directory=name, element=item)
     resp = session.request(body=message)
     item['id'] = resp['id']
     return item['id'], resp['version']
@@ -235,13 +118,14 @@ def remove(session, name, ids):
     """
     ids = maybe_item_or_ids(ids)
     if name in DIRS_FOR_NEW_PROC:
-        message = DirectoryRemoveNew(name, ids)
+        message = DirectoryRemoveNew(directory=name, ids=ids)
         resp = session.request(body=message)
         return resp['version']
     else:
+        message = DirectoryRemove(directory=name, ids=ids)
         # let's say "thanks" for unstructured answer
         wrapper = lambda el: el.find('content/f').attrib['v']
-        resp = session.request(body=DirectoryRemove(name, ids), wrapper=wrapper)
+        resp = session.request(body=message, wrapper=wrapper)
         return resp
 
 def restore(session, name, ids):
@@ -260,6 +144,6 @@ def restore(session, name, ids):
     :rtype: bool
     """
     ids = maybe_item_or_ids(ids)
-    message = DirectoryRestore(name, ids)
+    message = DirectoryRestore(directory=name, ids=ids)
     session.request(body=message)
     return True
