@@ -12,7 +12,9 @@ from phoxpy.messages import PhoxRequest, PhoxResponse
 from phoxpy.mapping import BooleanField, IntegerField, ListField, LongField, \
                            RefField, TextField
 
-class AuthRequest(PhoxRequest):
+__all__ = ['AuthRequest', 'AuthResponse']
+
+class AuthRequest(PhoxRequest, 'login'):
     """Authentication request message.
 
     :param client_id: License string heavy binded to computer hardware.

@@ -8,8 +8,7 @@
 #
 
 from phoxpy import xml
-from phoxpy.mapping import Mapping, AttributeField
-
+from phoxpy.mapping import MetaMapping, Mapping, AttributeField
 
 __all__ = ['Message', 'PhoxRequest', 'PhoxResponse']
 
@@ -32,6 +31,25 @@ class Message(Mapping):
             root.append(content)
         return super(Message, self).unwrap(root, content)
 
+
+class MetaPhoxRequest(MetaMapping):
+
+    def __new__(mcs, name, bases, data):
+        reqtype = None
+        bases = list(bases)
+        for idx, base in enumerate(bases):
+            if isinstance(base, str):
+                reqtype = bases.pop(idx)
+                break
+        data['_request_type'] = reqtype
+        return super(MetaPhoxRequest, mcs).__new__(mcs, name, tuple(bases), data)
+
+    def __call__(cls, *args, **data):
+        if cls._request_type is not None:
+            data['type'] = cls._request_type
+        return super(MetaPhoxRequest, cls).__call__(*args, **data)
+
+
 class PhoxRequest(Message):
     """Base request message.
 
@@ -44,6 +62,8 @@ class PhoxRequest(Message):
     :param version: Server version number.
     :type version: str
     """
+    __metaclass__ = MetaPhoxRequest
+
     type = AttributeField()
     buildnumber = AttributeField()
     version = AttributeField()
