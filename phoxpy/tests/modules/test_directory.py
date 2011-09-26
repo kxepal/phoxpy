@@ -17,8 +17,8 @@ class DirectoryTestCase(unittest.TestCase):
 
     def setUp(self):
         server = LisServer()
-        data = [{'id': 123, 'foo': 'bar'}, {'id': 456, 'foo': 'baz'},
-                {'id': 789, 'foo': 'zoo'}, {'id': 42, 'foo': 'answer!'}]
+        data = [{'id': '123', 'foo': 'bar'}, {'id': '456', 'foo': 'baz'},
+                {'id': '789', 'foo': 'zoo'}, {'id': '42', 'foo': 'answer!'}]
         for item in data:
             server.db[item['id']] = item
         session = client.Session(login='John', password='Doe',
@@ -43,8 +43,8 @@ class DirectoryTestCase(unittest.TestCase):
         self.assertEqual(sorted(items), sorted(self.server.db.values()))
 
     def test_load_by_id(self):
-        items = directory.load(self.session, 'foo', 456)
-        self.assertEqual(items.next(), self.server.db[456])
+        items = directory.load(self.session, 'foo', '456')
+        self.assertEqual(items.next(), self.server.db['456'])
         try:
             item = items.next()
         except StopIteration:
@@ -53,13 +53,13 @@ class DirectoryTestCase(unittest.TestCase):
             self.fail('Unexpectable item %r' % item)
 
     def test_load_by_ids(self):
-        items = list(directory.load(self.session, 'foo', [456, 42]))
-        data = [self.server.db[456], self.server.db[42]]
+        items = list(directory.load(self.session, 'foo', ['456', '42']))
+        data = [self.server.db['456'], self.server.db['42']]
         self.assertEqual(sorted(data), sorted(items))
 
     def test_load_by_item(self):
-        items = directory.load(self.session, 'foo', {'id': 42})
-        self.assertEqual(items.next(), self.server.db[42])
+        items = directory.load(self.session, 'foo', {'id': '42'})
+        self.assertEqual(items.next(), self.server.db['42'])
         try:
             item = items.next()
         except StopIteration:
@@ -68,44 +68,44 @@ class DirectoryTestCase(unittest.TestCase):
             self.fail('Unexpectable item %r' % item)
 
     def test_save(self):
-        item = self.server.db[42]
+        item = self.server.db['42']
         self.assertTrue('source' not in item)
         item['source'] = 'universe'
         id, version = directory.save(self.session, 'foo', item)
         self.assertEqual(id, item['id'])
-        self.assertEqual(item, self.server.db[42])
+        self.assertEqual(item, self.server.db['42'])
 
     def test_save_new(self):
-        item = self.server.db[42]
+        item = self.server.db['42']
         self.assertTrue('source' not in item)
         item['source'] = 'universe'
         id, version = directory.save(self.session, 'employee', item)
         self.assertEqual(id, item['id'])
-        self.assertEqual(item, self.server.db[42])
+        self.assertEqual(item, self.server.db['42'])
 
     def test_remove_by_id(self):
-        version = directory.remove(self.session, 'foo', 42)
-        self.assertTrue(42 in self.server.db)
-        self.assertTrue('removed' in self.server.db[42])
-        self.assertTrue(self.server.db[42]['removed'])
+        version = directory.remove(self.session, 'foo', '42')
+        self.assertTrue('42' in self.server.db)
+        self.assertTrue('removed' in self.server.db['42'])
+        self.assertTrue(self.server.db['42']['removed'])
 
     def test_remove_by_ids(self):
-        version = directory.remove(self.session, 'foo', [123, 456])
-        self.assertTrue(self.server.db[123]['removed'])
-        self.assertTrue(self.server.db[456]['removed'])
+        version = directory.remove(self.session, 'foo', ['123', '456'])
+        self.assertTrue(self.server.db['123']['removed'])
+        self.assertTrue(self.server.db['456']['removed'])
 
     def test_remove_by_item(self):
-        version = directory.remove(self.session, 'foo', {'id': 42, 'foo': 'bar'})
-        self.assertTrue(self.server.db[42]['removed'])
+        version = directory.remove(self.session, 'foo', {'id': '42', 'foo': 'bar'})
+        self.assertTrue(self.server.db['42']['removed'])
 
     def test_remove_new(self):
-        version = directory.remove(self.session, 'employee', 42)
-        self.assertTrue(self.server.db[42]['removed'])
+        version = directory.remove(self.session, 'employee', '42')
+        self.assertTrue(self.server.db['42']['removed'])
 
     def test_restore(self):
-        self.assertTrue(not self.server.db[42].get('removed', False))
-        self.server.db[42]['removed'] = True
-        assert directory.restore(self.session, 'foo', 42)
+        self.assertTrue(not self.server.db['42'].get('removed', False))
+        self.server.db['42']['removed'] = True
+        assert directory.restore(self.session, 'foo', '42')
 
 if __name__ == '__main__':
     unittest.main()

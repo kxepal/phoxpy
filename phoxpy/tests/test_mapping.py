@@ -296,20 +296,20 @@ class RefFieldTestCase(unittest.TestCase):
     def test_get_correct_value(self):
         elem = xml.Element('r')
         elem.attrib['i'] = '42'
-        self.assertEqual(self.field.to_python(elem), 42)
+        self.assertEqual(self.field.to_python(elem), '42')
 
-    def test_fail_get_float_value(self):
+    def test_get_float_value(self):
         elem = xml.Element('r')
         elem.attrib['i'] = '3.14'
-        self.assertRaises(ValueError, self.field.to_python, elem)
+        self.assertEqual(self.field.to_python(elem), '3.14')
 
-    def test_fail_get_invalid_value(self):
+    def test_get_custom_value(self):
         elem = xml.Element('r')
         elem.attrib['i'] = 'foobar'
-        self.assertRaises(ValueError, self.field.to_python, elem)
+        self.assertEqual(self.field.to_python(elem), 'foobar')
 
     def test_setter_creates_specific_xml_element(self):
-        elem = self.field.to_xml(42)
+        elem = self.field.to_xml('42')
         self.assertTrue(isinstance(elem, xml.ElementType))
         self.assertEqual(elem.tag, 'r')
         self.assertTrue('i' in elem.attrib)
