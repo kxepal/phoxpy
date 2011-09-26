@@ -35,7 +35,7 @@ def maybe_item_or_ids(value):
         return [value['id']]
     elif isinstance(value, list):
         return value
-    else:
+    elif value is not None:
         return [value]
 
 def items(session):
