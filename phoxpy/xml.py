@@ -11,7 +11,7 @@
 import sys
 
 __all__ = ['ENCODING','ElementType', 'ElementTreeType',
-           'Element', 'ElementTree', 'use', 'dump', 'load']
+           'Element', 'ElementTree', 'use', 'dump', 'load', 'parse']
 
 _using = None
 _initialized = False
@@ -19,6 +19,7 @@ _Element = None
 _ElementTree = None
 _load = None
 _dump = None
+_parse = None
 #: Type of :class:`~phoxpy.xml.Element` realization.
 ElementType = None
 #: Type of :class:`~phoxpy.xml.ElementTree` realization.
@@ -82,6 +83,28 @@ def load(s):
     return _load(s)
 
 @should_initialize_first
+def parse(fileobj):
+    """Parse file like object with xml data yielding events (`start` and `end`)
+    and elements. When `end` event occurred, emitted element cleaned up with all
+    attributes, inner nodes and siblings.
+
+    :param fileobj: File-like object.
+
+    :yields: 2-element tuple of event name and :class:`~phoxpy.xml.Element`
+             instance.
+    """
+    for event, elem in _parse(fileobj, ('start', 'end')):
+        yield event, elem
+        if event == 'end':
+            # clean up to reduce memory footprint
+            # http://www.ibm.com/developerworks/xml/library/x-hiperfparse/#listing4
+            elem.clear()
+            if not hasattr(elem, 'getprevious'):
+                continue
+            while elem.getprevious() is not None:
+                del elem.getparent()[0]
+
+@should_initialize_first
 def dump(xmlsrc, doctype=None, encoding=None):
     """Dump module with very limited support of doctype setting
     and force xml declaration definition.
@@ -115,7 +138,7 @@ def dump(xmlsrc, doctype=None, encoding=None):
     return ''.join([xml_declaration, doctype, xmlstr])
 
 def _initialize():
-    global _initialized, _using, _load, _dump, _Element, _ElementTree
+    global _initialized, _using, _load, _dump, _parse, _Element, _ElementTree
 
     def use_lxml():
         global ElementType, ElementTreeType
@@ -195,6 +218,7 @@ def _initialize():
             raise ValueError('Unsupported module %r' % _using)
     _load = module.fromstring
     _dump = module.tostring
+    _parse = module.iterparse
     _Element = module.Element
     _ElementTree = module.ElementTree
 
