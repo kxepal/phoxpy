@@ -631,9 +631,9 @@ class RefField(Field):
         >>> field = RefField()
         >>> elem = xml.Element('foo', i='42')
         >>> field.to_python(elem)
-        42
+        '42'
         """
-        return int(node.attrib['i'])
+        return node.attrib['i']
 
     def to_xml(self, value):
         """int => xml element
@@ -645,14 +645,14 @@ class RefField(Field):
         :rtype: :class:`~phoxpy.xml.Element`
 
         >>> field = RefField()
-        >>> elem = field.to_xml(42)
+        >>> elem = field.to_xml('42')
         >>> elem.tag
         'r'
         >>> elem.attrib['i']
         '42'
         """
-        if not isinstance(value, int):
-            raise TypeError('Integer value expected, got %r' % value)
+        if not isinstance(value, basestring):
+            raise TypeError('String reference value expected, got %r' % value)
         elem = super(RefField, self).to_xml(None)
         elem.attrib['i'] = str(value)
         return elem

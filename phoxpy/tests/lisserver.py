@@ -58,7 +58,7 @@ class LisServer(object):
             'sessionid': request.sessionid,
             'version': 0,
             request['name']: [
-                self.db[item] for item in request['elements'] if item in self.db
+                self.db[item] for item in elements if item in self.db
             ] if elements else self.db.values()
         }
         return messages.PhoxResponse(**data)
@@ -69,7 +69,7 @@ class LisServer(object):
             'version': 0,
             'id': request['element']['id']
         }
-        self.db[int(request['element']['id'])] = dict(request['element'].items())
+        self.db[request['element']['id']] = dict(request['element'].items())
         return messages.PhoxResponse(**data)
 
     def directory_save(self, request):
