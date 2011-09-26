@@ -63,6 +63,8 @@ class PhoxResource(http.Resource):
         elif isinstance(body, xml.ElementType):
             body = xml.dump(body)
         status, headers, data = self.post(path, body, headers, **params)
+        if isinstance(data, http.ResponseBody):
+            return status, headers, xml.parse(data)
         return status, headers, handle_lis_error(xml.load(data.read()))
 
 
