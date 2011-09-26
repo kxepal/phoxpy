@@ -13,7 +13,7 @@ from phoxpy.messages.directory import \
     DirectoryRemove, DirectoryRemoveNew, DirectoryRestore, \
     DirectoryVersions
 
-__all__ = ['DIRS_FOR_NEW_PROC', 'load', 'save', 'remove', 'restore',]
+__all__ = ['DIRS_FOR_NEW_PROC', 'items', 'load', 'save', 'remove', 'restore']
 
 #: List of directory names to which new directory message format should be
 #: applied.
@@ -33,12 +33,12 @@ def maybe_item_or_ids(value):
     """
     if isinstance(value, (dict, Mapping)):
         return [value['id']]
-    elif isinstance(value, int):
-        return [value]
-    else:
+    elif isinstance(value, list):
         return value
+    else:
+        return [value]
 
-def list(session):
+def items(session):
     """Iterates over all available directories.
 
     :param session: Active session instance.
