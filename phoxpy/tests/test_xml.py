@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 import unittest
+from StringIO import StringIO
 from phoxpy import xml
 
 
@@ -107,6 +108,26 @@ class XMLTestsMixIn(object):
         self.assertTrue(isinstance(root, xml.ElementType))
         self.assertEqual(root.tag, 'foo')
         self.assertEqual(root.attrib['bar'], 'baz')
+
+    def test_parse(self):
+        fobj = StringIO('''<?xml version='1.0' encoding='utf-8'?>
+            <foo><bar />something<baz><!--comment--><boo>42</boo></baz></foo>
+        ''')
+        stream = xml.parse(fobj)
+        expected_output = [
+            ('start', 'foo'),
+            ('start', 'bar'),
+            ('end', 'bar'),
+            ('start', 'baz'),
+            ('start', 'boo'),
+            ('end', 'boo'),
+            ('end', 'baz'),
+            ('end', 'foo'),
+        ]
+        for idx, item in enumerate(stream):
+            event, elem = item
+            tagname = elem.tag
+            self.assertEqual(expected_output[idx], (event, tagname))
         
 
 class CElementTreeTestCase(unittest.TestCase, XMLTestsMixIn):
