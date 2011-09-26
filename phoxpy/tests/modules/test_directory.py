@@ -28,7 +28,7 @@ class DirectoryTestCase(unittest.TestCase):
         self.server = server
 
     def test_list(self):
-        items = directory.list(self.session)
+        items = directory.items(self.session)
         self.assertTrue(isinstance(items, types.GeneratorType))
         items = list(items)
         items_should_be = [('foo', '0'), ('bar', '1'), ('baz', '2')]
