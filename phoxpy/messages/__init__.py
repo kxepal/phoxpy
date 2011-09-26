@@ -77,13 +77,22 @@ class PhoxRequest(Message):
         return xml.dump(self.unwrap(), doctype=doctype)
 
     @classmethod
-    def wrap(cls, xmlsrc, **defaults):
-        defaults.setdefault('type', xmlsrc.attrib['type'])
-        defaults.setdefault('sessionid', xmlsrc.attrib.get('sessionid'))
-        defaults.setdefault('buildnumber', xmlsrc.attrib.get('buildnumber'))
-        defaults.setdefault('version', xmlsrc.attrib.get('version'))
-        req = super(PhoxRequest, cls).wrap(xmlsrc.find('content'), **defaults)
-        return req
+    def wrap_xmlelem(cls, xmlelem, defaults):
+        defaults.update(xmlelem.attrib)
+        assert 'type' in defaults
+        root = xmlelem.find('content')
+        assert root is not None
+        return super(PhoxRequest, cls).wrap_xmlelem(root, defaults)
+
+    @classmethod
+    def wrap_stream(cls, stream, defaults):
+        event, elem = stream.next()
+        assert event == 'start' and elem.tag == 'phox-response'
+        attrs = dict(elem.attrib.items())
+        assert 'type' in defaults
+        event, elem = stream.next()
+        assert event == 'start' and elem.tag == 'content'
+        return super(PhoxRequest, cls).wrap_stream(stream, **attrs)
 
     def unwrap(self):
         root = xml.Element('phox-request')
