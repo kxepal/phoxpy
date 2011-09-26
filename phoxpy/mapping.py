@@ -12,6 +12,7 @@
 """Mapping from raw XML data structures to Python objects and vice versa."""
 import copy
 import datetime
+import types
 from phoxpy import xml
 
 __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
@@ -270,19 +271,32 @@ class Mapping(object):
         return type('AnonymousMapping', (cls,), d)
 
     @classmethod
-    def wrap(cls, xmlelem, **defaults):
+    def wrap(cls, xmlsrc, **defaults):
         """Wrap :class:`~phoxpy.xml.Element` or :class:`~phoxpy.xml.ElementTree`
         instance and map elements to related fields by name.
         """
-        if not isinstance(xmlelem, (xml.ElementType, xml.ElementTreeType)):
-            raise TypeError('Invalid xml data source %r' % xmlelem)
+        if isinstance(xmlsrc, (xml.ElementType, xml.ElementTreeType)):
+            defaults = cls.wrap_xmlelem(xmlsrc, defaults)
+        elif isinstance(xmlsrc, types.GeneratorType):
+            defaults = cls.wrap_stream(xmlsrc, defaults)
+        else:
+            raise TypeError('Invalid xml data source %r' % xmlsrc)
+        instance = cls(**defaults)
+        return instance
+
+    @classmethod
+    def wrap_xmlelem(cls, xmlelem, defaults):
         if isinstance(xmlelem, xml.ElementTreeType):
             root = xmlelem.getroot()
         else:
             root = xmlelem
         defaults.update(gen_dict_by_xml(root, **cls._fields))
-        instance = cls(**defaults)
-        return instance
+        return defaults
+
+    @classmethod
+    def wrap_stream(cls, stream, defaults):
+        defaults.update(gen_values_from_stream(stream))
+        return defaults
 
     def unwrap(self, root, content=None):
         """Unwraps mapping instance to XML object.
@@ -834,3 +848,48 @@ def gen_field_by_xmlelem(elem):
     else:
         field = fieldcls(name=fname)
     return field
+
+def gen_values_from_stream(stream):
+
+    def handle_field(stream, endelem):
+        for event, elem in stream:
+            assert elem is endelem and event == 'end', (event, elem)
+            fieldcls = guess_fieldcls_by_elem(elem)
+            value = fieldcls().to_python(elem)
+            return value
+
+    def handle_object_field(stream, endelem):
+        data = {}
+        for event, elem in stream:
+            fieldcls = guess_fieldcls_by_elem(elem)
+            if event == 'start':
+                key = elem.attrib['n']
+                if fieldcls is ListField:
+                    data[key] = list(handle_list_field(stream, elem))
+                elif fieldcls is ObjectField:
+                    data[key] = handle_object_field(stream, elem)
+                else:
+                    data[key] = handle_field(stream, elem)
+            if event == 'end':
+                assert elem is endelem, (elem, endelem)
+                break
+        return data
+
+    def handle_list_field(stream, endelem):
+        for event, elem in stream:
+            fieldcls = guess_fieldcls_by_elem(elem)
+            if event == 'start':
+                if fieldcls is ListField:
+                    yield handle_list_field(stream, elem)
+                elif fieldcls is ObjectField:
+                    yield handle_object_field(stream, elem)
+                else:
+                    yield handle_field(stream, elem)
+            if event == 'end':
+                assert elem is endelem
+                break
+
+    for event, elem in stream:
+        # stream should be started from object description
+        assert event == 'start' and elem.tag == 'o'
+        return handle_object_field(stream, elem)

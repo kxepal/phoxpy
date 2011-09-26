@@ -65,7 +65,7 @@ class PhoxRequestTestCase(unittest.TestCase):
     def test_wrap_should_containt_attrib_type(self):
         root = xml.Element('phox-request')
         root.append(xml.Element('content'))
-        self.assertRaises(KeyError, messages.PhoxRequest.wrap, root)
+        self.assertRaises(AssertionError, messages.PhoxRequest.wrap, root)
 
     def test_wrap(self):
         root = xml.Element('phox-request')

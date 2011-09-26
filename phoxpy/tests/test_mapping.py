@@ -8,6 +8,7 @@
 #
 import datetime
 import unittest
+from StringIO import StringIO
 
 from phoxpy import xml
 from phoxpy import mapping
@@ -952,6 +953,23 @@ class MappingTestCase(unittest.TestCase):
         root = obj.unwrap(xml.Element('root'))
         obj2 = Dummy.wrap(root)
         self.assertEqual(obj2['foo'], {'foo': [{}]})
+
+    def test_wrap_xml_stream(self):
+        class Dummy(mapping.Mapping):
+            pass
+        obj = Dummy(foo=[{'bar': 'baz'}, {'boo': 42}])
+        elem = obj.unwrap(xml.Element('o'))
+        stream = xml.parse(StringIO(xml.dump(elem)))
+        obj2 = Dummy.wrap(stream)
+        self.assertEqual(obj['foo'], obj2['foo'])
+
+    def test_wrap_xml_stream_should_have_object_root(self):
+        class Dummy(mapping.Mapping):
+            pass
+        obj = Dummy()
+        elem = obj.unwrap(xml.Element('foo'))
+        stream = xml.parse(StringIO(xml.dump(elem)))
+        self.assertRaises(AssertionError, Dummy.wrap, stream)
 
     def test_to_python(self):
         class Dummy(mapping.Mapping):

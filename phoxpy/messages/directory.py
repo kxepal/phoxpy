@@ -27,13 +27,11 @@ class DirectoryRequestNewMixIn(PhoxRequest):
         return super(PhoxRequest, self).unwrap(root, obj)
 
     @classmethod
-    def wrap(cls, xmlsrc, **defaults):
-        defaults.setdefault('type', xmlsrc.attrib['type'])
-        defaults.setdefault('sessionid', xmlsrc.attrib.get('sessionid'))
-        defaults.setdefault('buildnumber', xmlsrc.attrib.get('buildnumber'))
-        defaults.setdefault('version', xmlsrc.attrib.get('version'))
-        req = super(PhoxRequest, cls).wrap(xmlsrc.find('content/o'), **defaults)
-        return req
+    def wrap_xmlelem(cls, xmlelem, defaults):
+        defaults.update(xmlelem.attrib)
+        root = xmlelem.find('content/o')
+        assert root is not None
+        return super(PhoxRequest, cls).wrap_xmlelem(root, defaults)
 
 
 class DirectoryLoad(PhoxRequest, 'directory'):
