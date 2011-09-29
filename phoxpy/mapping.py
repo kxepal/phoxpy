@@ -861,8 +861,8 @@ def gen_values_from_stream(stream):
     def handle_object_field(stream, endelem):
         data = {}
         for event, elem in stream:
-            fieldcls = guess_fieldcls_by_elem(elem)
             if event == 'start':
+                fieldcls = guess_fieldcls_by_elem(elem)
                 key = elem.attrib['n']
                 if fieldcls is ListField:
                     data[key] = list(handle_list_field(stream, elem))
@@ -877,8 +877,8 @@ def gen_values_from_stream(stream):
 
     def handle_list_field(stream, endelem):
         for event, elem in stream:
-            fieldcls = guess_fieldcls_by_elem(elem)
             if event == 'start':
+                fieldcls = guess_fieldcls_by_elem(elem)
                 if fieldcls is ListField:
                     yield handle_list_field(stream, elem)
                 elif fieldcls is ObjectField:
@@ -891,5 +891,4 @@ def gen_values_from_stream(stream):
 
     for event, elem in stream:
         # stream should be started from object description
-        assert event == 'start' and elem.tag == 'o'
         return handle_object_field(stream, elem)

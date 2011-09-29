@@ -966,10 +966,10 @@ class MappingTestCase(unittest.TestCase):
     def test_wrap_xml_stream_should_have_object_root(self):
         class Dummy(mapping.Mapping):
             pass
-        obj = Dummy()
+        obj = Dummy(foo='bar')
         elem = obj.unwrap(xml.Element('foo'))
         stream = xml.parse(StringIO(xml.dump(elem)))
-        self.assertRaises(AssertionError, Dummy.wrap, stream)
+        self.assertEqual(Dummy.wrap(stream).to_python(), {'foo': 'bar'})
 
     def test_to_python(self):
         class Dummy(mapping.Mapping):
