@@ -13,7 +13,7 @@ from phoxpy.messages.directory import \
     DirectoryRemove, DirectoryRemoveNew, DirectoryRestore, \
     DirectoryVersions
 
-__all__ = ['DIRS_FOR_NEW_PROC', 'items', 'load', 'save', 'remove', 'restore']
+__all__ = ['DIRS_FOR_NEW_PROC', 'items', 'load', 'store', 'remove', 'restore']
 
 #: List of directory names to which new directory message format should be
 #: applied.
@@ -69,7 +69,7 @@ def load(session, name, ids=None):
     for item in resp[name]:
         yield item.to_python()
 
-def save(session, name, item):
+def store(session, name, item):
     """Stores directory object on server.
 
     :param session: Active session instance.
