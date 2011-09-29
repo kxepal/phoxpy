@@ -67,19 +67,19 @@ class DirectoryTestCase(unittest.TestCase):
         else:
             self.fail('Unexpectable item %r' % item)
 
-    def test_save(self):
+    def test_store(self):
         item = self.server.db['42']
         self.assertTrue('source' not in item)
         item['source'] = 'universe'
-        id, version = directory.save(self.session, 'foo', item)
+        id, version = directory.store(self.session, 'foo', item)
         self.assertEqual(id, item['id'])
         self.assertEqual(item, self.server.db['42'])
 
-    def test_save_new(self):
+    def test_store_new(self):
         item = self.server.db['42']
         self.assertTrue('source' not in item)
         item['source'] = 'universe'
-        id, version = directory.save(self.session, 'employee', item)
+        id, version = directory.store(self.session, 'employee', item)
         self.assertEqual(id, item['id'])
         self.assertEqual(item, self.server.db['42'])
 
