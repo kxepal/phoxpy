@@ -8,6 +8,7 @@
 #
 
 import unittest
+from StringIO import StringIO
 from phoxpy import mapping
 from phoxpy import messages
 from phoxpy import xml
@@ -74,6 +75,14 @@ class PhoxRequestTestCase(unittest.TestCase):
         req = messages.PhoxRequest.wrap(root)
         self.assertEqual(req.type, 'foo')
 
+    def test_wrap_stream(self):
+        stream = xml.parse(StringIO('''<phox-request type="foo">
+        <content><f n="bar" t="S" v="baz" /></content>
+        </phox-request>'''))
+        req = messages.PhoxRequest.wrap(stream)
+        self.assertEqual(req.type, 'foo')
+        self.assertEqual(req['bar'], 'baz')
+
     def test_unwrap(self):
         msg = messages.PhoxRequest(type='foo', sessionid='bar',
                                    version='baz', buildnumber='zoo')
@@ -133,6 +142,19 @@ class PhoxResponseTestCase(unittest.TestCase):
             '<content><o/></content>'
             '</phox-response>' % xml.ENCODING
         )
+
+    def test_wrap_stream(self):
+        stream = xml.parse(StringIO("<?xml version='1.0' encoding='utf-8'?>\n"
+            '<!DOCTYPE phox-response SYSTEM "phox.dtd">\n'
+            '<phox-response>'
+            '<content><o><s n="fbb">'
+            '<f n="foo" v="foo" t="S"/>'
+            '<f n="bar" v="bar" t="S"/>'
+            '<f n="baz" v="baz" t="S"/>'
+            '</s></o></content>'
+            '</phox-response>'))
+        msg = messages.PhoxResponse.wrap(stream)
+        self.assertEqual(sorted(['foo', 'bar', 'baz']), sorted(msg['fbb']))
 
 
 if __name__ == '__main__':
