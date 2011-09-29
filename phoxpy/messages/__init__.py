@@ -87,12 +87,10 @@ class PhoxRequest(Message):
     @classmethod
     def wrap_stream(cls, stream, defaults):
         event, elem = stream.next()
-        assert event == 'start' and elem.tag == 'phox-response'
-        attrs = dict(elem.attrib.items())
+        assert event == 'start' and elem.tag == 'phox-request'
+        defaults.update(dict(elem.attrib.items()))
         assert 'type' in defaults
-        event, elem = stream.next()
-        assert event == 'start' and elem.tag == 'content'
-        return super(PhoxRequest, cls).wrap_stream(stream, **attrs)
+        return super(PhoxRequest, cls).wrap_stream(stream, defaults)
 
     def unwrap(self):
         root = xml.Element('phox-request')
@@ -115,13 +113,20 @@ class PhoxResponse(Message):
         return xml.dump(self.unwrap(), doctype=doctype)
 
     @classmethod
-    def wrap(cls, xmlsrc):
-        root = xmlsrc.find('content/o')
-        if root is None:
-            root = xmlsrc.find('content')
+    def wrap_xmlelem(cls, xmlelem, defaults):
+        root = xmlelem.find('content/o')
         assert root is not None, xml.dump(xmlsrc)
-        attrs = dict(xmlsrc.attrib.items())
-        return super(PhoxResponse, cls).wrap(root, **attrs)
+        defaults.update(xmlelem.attrib.items())
+        return super(PhoxResponse, cls).wrap_xmlelem(root, defaults)
+
+    @classmethod
+    def wrap_stream(cls, stream, defaults):
+        event, elem = stream.next()
+        assert event == 'start' and elem.tag == 'phox-response'
+        defaults.update(elem.attrib.items())
+        event, elem = stream.next()
+        assert event == 'start' and elem.tag == 'content'
+        return super(PhoxResponse, cls).wrap_stream(stream, defaults)
 
     def unwrap(self):
         root = xml.Element('phox-response')
