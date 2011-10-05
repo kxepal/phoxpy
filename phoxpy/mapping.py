@@ -665,7 +665,7 @@ class RefField(Field):
         >>> elem.attrib['i']
         '42'
         """
-        if not isinstance(value, basestring):
+        if not isinstance(value, (int, basestring)):
             raise TypeError('String reference value expected, got %r' % value)
         elem = super(RefField, self).to_xml(None)
         elem.attrib['i'] = str(value)

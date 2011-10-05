@@ -316,6 +316,11 @@ class RefFieldTestCase(unittest.TestCase):
         self.assertTrue('i' in elem.attrib)
         self.assertEqual(elem.attrib['i'], '42')
 
+    def test_allow_integer_value(self):
+        elem = self.field.to_xml(42)
+        self.assertTrue(isinstance(elem, xml.ElementType))
+        self.assertEqual(elem.attrib['i'], '42')
+
     def test_fail_to_set_invalid_value(self):
         self.assertRaises(TypeError, self.field.to_xml, 3.14)
 
