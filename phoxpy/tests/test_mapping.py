@@ -648,6 +648,17 @@ class ListFieldTestCase(unittest.TestCase):
         obj.numbers *= 0
         self.assertEqual(obj.numbers, [])
 
+    def test_proxy_mapping_wrap(self):
+        class Dummy(mapping.Mapping):
+            numbers = mapping.ListField(mapping.ObjectField(mapping.Mapping.build(
+                positive = mapping.ListField(mapping.IntegerField()),
+                negative = mapping.ListField(mapping.IntegerField()),
+            )))
+        obj = Dummy()
+        obj.numbers.append({'positive': [1, 2, 3], 'negative': [-1, -2, -3]})
+        self.assertTrue(isinstance(obj.numbers[0], mapping.Mapping))
+        self.assertEqual(obj.numbers[0].positive, [1, 2, 3])
+
 
 class MappingTestCase(unittest.TestCase):
 

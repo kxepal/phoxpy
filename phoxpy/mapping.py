@@ -10,6 +10,7 @@
 # <https://couchdb-python.googlecode.com/hg/couchdb/mapping.py>
 #
 """Mapping from raw XML data structures to Python objects and vice versa."""
+from itertools import repeat, islice
 import copy
 import datetime
 import types
@@ -684,11 +685,145 @@ class ListField(Field):
         self.field = field
         super(ListField, self).__init__(name, default)
 
-    def _to_python(self, value):
-        return value
+    class Proxy(list):
+        def __init__(self, seq, field):
+            list.__init__(self, seq)
+            self.list = seq
+            self.field = field
 
-    def _to_xml(self, value):
-        return value
+        def _to_python(self):
+            return [self.field._get_value(item) for item in self.list]
+
+        def __add__(self, other):
+            return self.list + [self.field._set_value(item) for item in other]
+
+        def __iadd__(self, other):
+            self.extend(other)
+            return self
+
+        def __mul__(self, other):
+            return type(self)(self.list * other, self.field)
+
+        def __imul__(self, other):
+            self.list *= other
+            return self
+
+        def __lt__(self, other):
+            return self._to_python() < other
+
+        def __le__(self, other):
+            return self._to_python() <= other
+
+        def __eq__(self, other):
+            return self._to_python() == other
+
+        def __ne__(self, other):
+            return self._to_python() != other
+
+        def __ge__(self, other):
+            return self._to_python() >= other
+
+        def __gt__(self, other):
+            return self._to_python() > other
+
+        def __repr__(self):
+            return '<ListProxy %s %r>' % (self.list, list(self))
+
+        def __str__(self):
+            return str(self.list)
+
+        def __unicode__(self):
+            return unicode(self.list)
+
+        def __delitem__(self, index):
+            del self.list[index]
+
+        def __getitem__(self, index):
+            return self.field._get_value(self.list[index])
+
+        def __setitem__(self, index, value):
+            self.list[index] = self.field._set_value(value)
+
+        def __delslice__(self, i, j):
+            del self.list[i:j]
+
+        def __getslice__(self, i, j):
+            return ListField.Proxy(self.list[i:j], self.field)
+
+        def __setslice__(self, i, j, seq):
+            self.list[i:j] = [self.field._set_value(v) for v in seq]
+
+        def __contains__(self, value):
+            for item in self:
+                if item == value:
+                    return True
+            return False
+
+        def __iter__(self):
+            for index in range(len(self)):
+                yield self[index]
+
+        def __len__(self):
+            return len(self.list)
+
+        def __nonzero__(self):
+            return bool(self.list)
+
+        def __reduce__(self):
+            return self.list.__reduce__()
+
+        def __reduce_ex__(self, *args, **kwargs):
+            return self.list.__reduce_ex__(*args, **kwargs)
+
+        def append(self, item):
+            self.list.append(self.field._set_value(item))
+
+        def count(self, value):
+            return [i for i in self].count(value)
+
+        def extend(self, other):
+            self.list.extend([self.field._set_value(i) for i in other])
+
+        def index(self, value, start=None, stop=None):
+            start = start or 0
+            for idx, item in enumerate(islice(self, start, stop)):
+                if item == value:
+                    return idx + start
+            else:
+                raise ValueError('%r not in list' % value)
+
+        def insert(self, index, object):
+            self.list.insert(index, self.field._set_value(object))
+
+        def remove(self, value):
+            for item in self:
+                if item == value:
+                    return self.list.remove(value)
+            raise ValueError('Value %r not in list' % value)
+
+        def pop(self, index=-1):
+            return self.field._get_value(self.list.pop(index))
+
+        def sort(self, cmp=None, key=None, reverse=False):
+            vals = list(sorted(self, cmp, key, reverse))
+            del self.list[:]
+            for i in vals:
+                self.append(i)
+
+        # update docstrings from list
+        for item in dir():
+            if getattr(list, item, None) is None \
+                or item in ['__module__', '__doc__']:
+                continue
+            func = eval(item)
+            func.__doc__ = getattr(list, item).__doc__
+        del func, item
+
+    def _get_value(self, value):
+        return self.Proxy(value, self.field)
+
+    def _set_value(self, value):
+        return self.Proxy(value, self.field)
 
     def to_python(self, node):
         """Converts XML element to list-like object.
@@ -747,7 +882,12 @@ class ObjectField(Field):
         super(ObjectField, self).__init__(name, default=default)
 
     def _set_value(self, value):
-        return self.mapping(**dict(value.items()))
+        if isinstance(value, dict):
+            return self.mapping(**value)
+        elif isinstance(value, self.mapping):
+            return value
+        else:
+            return self.mapping(**dict(value.items()))
 
     def to_python(self, node):
         return self.mapping.wrap(node)
