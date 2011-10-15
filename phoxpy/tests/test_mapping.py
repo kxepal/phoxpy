@@ -321,6 +321,12 @@ class RefFieldTestCase(unittest.TestCase):
         self.assertTrue(isinstance(elem, xml.ElementType))
         self.assertEqual(elem.attrib['i'], '42')
 
+    def test_to_python_creates_special_value(self):
+        elem = xml.Element('r')
+        elem.attrib['i'] = 'foobar'
+        data = self.field.to_python(elem)
+        self.assertTrue(isinstance(data, mapping.Reference))
+
     def test_fail_to_set_invalid_value(self):
         self.assertRaises(TypeError, self.field.to_xml, 3.14)
 
@@ -658,6 +664,19 @@ class ListFieldTestCase(unittest.TestCase):
         obj.numbers.append({'positive': [1, 2, 3], 'negative': [-1, -2, -3]})
         self.assertTrue(isinstance(obj.numbers[0], mapping.Mapping))
         self.assertEqual(obj.numbers[0].positive, [1, 2, 3])
+
+    def test_list_of_references(self):
+        class Dummy(mapping.Mapping):
+            ids = mapping.ListField(mapping.RefField())
+        obj = Dummy()
+        obj.ids.append('foo')
+        obj.ids.append('bar')
+        obj.ids.append('baz')
+        root = obj.unwrap(xml.Element('root'))
+        self.assertEqual(root[0].tag, 's')
+        for elem in root[0]:
+            self.assertEqual(elem.tag, 'r')
+            self.assertTrue('i' in elem.attrib)
 
 
 class MappingTestCase(unittest.TestCase):

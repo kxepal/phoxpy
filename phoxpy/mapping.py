@@ -631,6 +631,11 @@ class DateTimeField(Field):
         return elem
 
 
+class Reference(unicode):
+    """Sentinel unicode value that marks RefField value to help serialize them
+    back to XML without losing information about their kind."""
+
+
 class RefField(Field):
     """Mapping field for storing object reference ids."""
 
@@ -648,7 +653,7 @@ class RefField(Field):
         >>> field.to_python(elem)
         '42'
         """
-        return node.attrib['i']
+        return Reference(node.attrib['i'])
 
     def to_xml(self, value):
         """int => xml element
@@ -907,9 +912,9 @@ BooleanField.register('f', [bool], {'t': 'B'})
 IntegerField.register('f', [int], {'t': 'I'})
 LongField.register('f', [long], {'t': 'L'})
 FloatField.register('f', [float], {'t': 'F'})
-TextField.register('f', [basestring], {'t': 'S'})
+TextField.register('f', [str, unicode], {'t': 'S'})
 DateTimeField.register('f', [datetime.datetime, datetime.date], {'t': 'D'})
-RefField.register('r', [], {})
+RefField.register('r', [Reference], {})
 ListField.register('s', [list, tuple, set, frozenset], {})
 ObjectField.register('o', [dict, Mapping], {})
 
@@ -926,10 +931,16 @@ def guess_fieldcls_by_elem(elem):
     raise ValueError('Could not guess field for element\n%s' % elem)
 
 def guess_fieldcls_by_value(value):
+    tval = type(value)
+    maybe_right_field = None
     for fieldcls in Field.__subclasses__():
         for pytype in fieldcls._pytypes:
-            if isinstance(value, pytype):
+            if tval is pytype:
                 return fieldcls
+            elif isinstance(value, pytype):
+                maybe_right_field = fieldcls
+    if maybe_right_field is not None:
+        return maybe_right_field
     raise ValueError('Could not guess field for value %r' % value)
 
 def gen_dict_by_xml(root, **fields):
