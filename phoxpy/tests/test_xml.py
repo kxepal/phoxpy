@@ -6,10 +6,10 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
+
 import unittest
 from StringIO import StringIO
 from phoxpy import xml
-
 
 class XMLTestsMixIn(object):
 

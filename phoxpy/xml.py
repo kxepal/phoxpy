@@ -9,9 +9,12 @@
 """An abstraction layer over various ElementTree-based XML modules."""
 
 import sys
+from StringIO import StringIO
+from phoxpy import xmlcodec
 
 __all__ = ['ENCODING','ElementType', 'ElementTreeType',
-           'Element', 'ElementTree', 'use', 'dump', 'load', 'parse']
+           'Element', 'ElementTree', 'use', 'dump', 'load', 'parse',
+           'decode', 'encode']
 
 _using = None
 _initialized = False
@@ -20,6 +23,8 @@ _ElementTree = None
 _load = None
 _dump = None
 _parse = None
+_default_decoder = xmlcodec.PhoxDecoder()
+_default_encoder = xmlcodec.PhoxEncoder(lambda *a, **k: Element(*a, **k))
 #: Type of :class:`~phoxpy.xml.Element` realization.
 ElementType = None
 #: Type of :class:`~phoxpy.xml.ElementTree` realization.
@@ -57,6 +62,62 @@ def use(module):
         raise ValueError('Unsupported XML module %s' % module)
     _using = module
     _initialized = False
+
+def decode(xmlsrc, cls=None, handlers=None):
+    """Decodes xml source to Python object.
+
+    :param xmlsrc: XML data source.
+
+    :param cls: Custom decoder class. Uses :class:`~phoxpy.xmlcodec.PhoxDecoder`
+                by default.
+    :type cls: :class:`~phoxpy.xmlcodec.Decoder`
+
+    :param handlers: Custom handlers for xml element.
+    :type handlers: dict
+    """
+    if isinstance(xmlsrc, basestring):
+        stream = parse(StringIO(xmlsrc))
+    elif isinstance(xmlsrc, ElementType):
+        stream = parse(StringIO(dump(xmlsrc)))
+    elif isinstance(xmlsrc, ElementTreeType):
+        stream = parse(StringIO(dump(xmlsrc.getroot())))
+    elif hasattr(xmlsrc, 'read'):
+        stream = parse(xmlsrc)
+    else:
+        stream = xmlsrc
+    decoder = _default_decoder
+    if cls is not None or handlers is not None:
+        kwargs = {}
+        if handlers is not None:
+            kwargs['handlers'] = handlers
+        if cls is None:
+            cls = xmlcodec.PhoxDecoder
+        decoder = cls(**kwargs)
+    return decoder.decode(stream)
+
+def encode(data, cls=None, handlers=None):
+    """Encodes Python object to XML object.
+
+    :param data: Python object.
+
+    :param cls: Custom encoder class. Uses :class:`~phoxpy.xmlcodec.PhoxEncoder`
+                by default.
+    :type cls: :class:`~phoxpy.xmlcodec.Encoder`
+
+    :param handlers: Custom handlers for xml element.
+    :type handlers: dict
+
+    :return: :class:`~phoxpy.xml.Element` instance.
+    """
+    encoder = _default_encoder
+    if cls is not None or handlers is not None:
+        kwargs = {}
+        if handlers is not None:
+            kwargs['handlers'] = handlers
+        if cls is None:
+            cls = xmlcodec.PhoxEncoder
+        encoder = cls(Element, **kwargs)
+    return encoder.encode(data)
 
 def should_initialize_first(func):
     def wrapper(*args, **kwargs):
