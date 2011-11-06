@@ -6,11 +6,9 @@
 # This software is licensed as described in the file COPYING, which
 # you should have received as part of this distribution.
 #
+
 import datetime
 import unittest
-from StringIO import StringIO
-
-from phoxpy import xml
 from phoxpy import mapping
 
 
@@ -31,31 +29,6 @@ class FieldTestCase(unittest.TestCase):
         f = mapping.Field(default='foo')
         self.assertTrue(f.default, 'foo')
 
-    def test_default_getter(self):
-        f = mapping.Field()
-        elem = xml.Element('foo')
-        elem.attrib['v'] = 'bar'
-        self.assertEqual(f.to_python(elem), 'bar')
-
-    def test_default_setter(self):
-        f = mapping.Field()
-        elem = f.to_xml('foo')
-        self.assertTrue(isinstance(elem, xml.ElementType))
-        self.assertEqual(elem.tag, 'f')
-        self.assertTrue('v' in elem.attrib)
-        self.assertEqual(elem.attrib['v'], 'foo')
-
-    def test_missed_name_attribute_for_nonamed_fields(self):
-        f = mapping.Field()
-        elem = f.to_xml('foo')
-        self.assertTrue('n' not in elem.attrib)
-
-    def test_name_attribute_for_named_fields(self):
-        f = mapping.Field('foo')
-        elem = f.to_xml('bar')
-        self.assertTrue('n' in elem.attrib)
-        self.assertTrue(elem.attrib['n'], 'foo')
-
     def test_callable_default_value(self):
         class Dummy(mapping.Mapping):
             field = mapping.Field(default=lambda: 'foobar')
@@ -63,16 +36,6 @@ class FieldTestCase(unittest.TestCase):
 
 
 class AttributeFieldTestCase(unittest.TestCase):
-
-    def test_set_attribute(self):
-        class Dummy(mapping.Mapping):
-            foo = mapping.AttributeField()
-        obj = Dummy()
-        obj.foo = 'bar'
-        self.assertEqual(obj.foo, 'bar')
-        elem = obj.unwrap(xml.Element('root'))
-        self.assertTrue('foo' in elem.attrib)
-        self.assertEqual(elem.attrib['foo'], 'bar')
 
     def test_object_attribute(self):
         class Dummy(mapping.Mapping):
@@ -84,298 +47,147 @@ class AttributeFieldTestCase(unittest.TestCase):
         self.assertEqual(obj.foo.bar, 'baz')
 
 
-class BooleanFieldTestCase(unittest.TestCase):
-
+class BooleanTestCase(unittest.TestCase):
+    
     def setUp(self):
-        self.field = mapping.BooleanField()
+        class Dummy(mapping.Mapping):
+            field = mapping.BooleanField()
+        self.Dummy = Dummy
 
-    def test_get_value_true(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = 'true'
-        self.assertEqual(self.field.to_python(elem), True)
+    def test_get_value(self):
+        obj = self.Dummy(field=False)
+        self.assertEqual(obj.field, False)
 
-    def test_get_value_false(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = 'false'
-        self.assertEqual(self.field.to_python(elem), False)
-
-    def test_fail_to_get_invalid_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = 'foobar'
-        self.assertRaises(ValueError, self.field.to_python, elem)
-
-    def test_set_correct_type_attrib(self):
-        value = self.field.to_xml(True)
-        self.assertEqual(value.attrib.get('t'), 'B')
-
-    def test_set_value_true(self):
-        value = self.field.to_xml(True)
-        self.assertEqual(value.attrib.get('v'), 'true')
-
-    def test_set_value_false(self):
-        value = self.field.to_xml(False)
-        self.assertEqual(value.attrib.get('v'), 'false')
-
-    def test_fail_to_set_invalid_value(self):
-        self.assertRaises(TypeError, self.field.to_xml, None)
+    def test_set_value(self):
+        obj = self.Dummy()
+        obj.field = True
+        self.assertEqual(obj.field, True)
 
 
-class IntegerFieldTestCase(unittest.TestCase):
-
+class IntegerTestCase(unittest.TestCase):
+    
     def setUp(self):
-        self.field = mapping.IntegerField()
+        class Dummy(mapping.Mapping):
+            field = mapping.IntegerField()
+        self.Dummy = Dummy
 
-    def test_get_correct_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = '42'
-        self.assertEqual(self.field.to_python(elem), 42)
+    def test_get_value(self):
+        obj = self.Dummy(field=42)
+        self.assertEqual(obj.field, 42)
 
-    def test_get_float_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = '3.14'
-        self.assertRaises(ValueError, self.field.to_python, elem)
-
-    def test_fail_to_get_invalid_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = 'foobar'
-        self.assertRaises(ValueError, self.field.to_python, elem)
-
-    def test_set_correct_type_attrib(self):
-        value = self.field.to_xml(42)
-        self.assertEqual(value.attrib.get('t'), 'I')
-
-    def test_set_correct_value(self):
-        value = self.field.to_xml(42)
-        self.assertEqual(value.attrib.get('v'), '42')
-
-    def test_fail_to_set_invalid_value(self):
-        self.assertRaises(TypeError, self.field.to_xml, 3.14)
+    def test_set_value(self):
+        obj = self.Dummy()
+        obj.field = 42
+        self.assertEqual(obj.field, 42)
 
 
 class LongFieldTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.field = mapping.LongField()
+        class Dummy(mapping.Mapping):
+            field = mapping.LongField()
+        self.Dummy = Dummy
 
-    def test_get_correct_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = '100500'
-        self.assertEqual(self.field.to_python(elem), 100500)
+    def test_get_value(self):
+        obj = self.Dummy(field=100500)
+        self.assertEqual(obj.field, 100500L)
 
-    def test_get_float_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = '3.14'
-        self.assertRaises(ValueError, self.field.to_python, elem)
-
-    def test_fail_get_invalid_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = 'foobar'
-        self.assertRaises(ValueError, self.field.to_python, elem)
-
-    def test_set_correct_type_attrib(self):
-        value = self.field.to_xml(100500L)
-        self.assertEqual(value.attrib.get('t'), 'L')
-
-    def test_set_correct_value(self):
-        value = self.field.to_xml(100500L)
-        self.assertEqual(value.attrib.get('v'), '100500')
-
-    def test_fail_set_invalid_value(self):
-        self.assertRaises(TypeError, self.field.to_xml, 3.14)
+    def test_set_value(self):
+        obj = self.Dummy()
+        obj.field = 100500
+        self.assertEqual(obj.field, 100500L)
 
 
 class FloatFieldTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.field = mapping.FloatField()
+        class Dummy(mapping.Mapping):
+            field = mapping.FloatField()
+        self.Dummy = Dummy
 
-    def test_get_correct_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = '3.14'
-        self.assertEqual(self.field.to_python(elem), 3.14)
+    def test_get_value(self):
+        obj = self.Dummy(field=3.14)
+        self.assertEqual(obj.field, 3.14)
 
-    def test_get_int_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = '42'
-        self.assertEqual(self.field.to_python(elem), 42)
+    def test_set_value(self):
+        obj = self.Dummy()
+        obj.field = 3.14
+        self.assertEqual(obj.field, 3.14)
 
-    def test_fail_get_invalid_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = 'foobar'
-        self.assertRaises(ValueError, self.field.to_python, elem)
-
-    def test_set_correct_type_attrib(self):
-        value = self.field.to_xml(3.14)
-        self.assertEqual(value.attrib.get('t'), 'F')
-
-    def test_set_correct_value(self):
-        value = self.field.to_xml(3.14)
-        self.assertEqual(value.attrib.get('v'), '3.14')
-
-    def test_fail_set_invalid_value(self):
-        self.assertRaises(TypeError, self.field.to_xml, 100500L)
+    def test_set_int_value(self):
+        obj = self.Dummy()
+        obj.field = 42
+        self.assertEqual(obj.field, 42.0)
 
 
 class TextFieldTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.field = mapping.TextField()
+        class Dummy(mapping.Mapping):
+            field = mapping.TextField()
+        self.Dummy = Dummy
 
-    def test_get_correct_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = 'Hello, World!'
-        self.assertEqual(self.field.to_python(elem), 'Hello, World!')
+    def test_get_value(self):
+        obj = self.Dummy(field='foo')
+        self.assertEqual(obj.field, u'foo')
 
-    def test_get_unicode_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = u'Привет, Мир!'
-        self.assertEqual(self.field.to_python(elem), u'Привет, Мир!')
+    def test_set_value(self):
+        obj = self.Dummy()
+        obj.field = u'привет'
+        self.assertEqual(obj.field, u'привет')
 
-    def test_set_correct_type_attrib(self):
-        value = self.field.to_xml('foobar')
-        self.assertEqual(value.attrib.get('t'), 'S')
+    def test_set_utf8_value(self):
+        obj = self.Dummy()
+        obj.field = u'привет'.encode('utf-8')
+        self.assertEqual(obj.field, u'привет')
 
-    def test_set_correct_value(self):
-        value = self.field.to_xml('foobar')
-        self.assertEqual(value.attrib.get('v'), 'foobar')
+    def test_fail_set_non_utf8_value(self):
+        obj = self.Dummy()
+        try:
+            obj.field = u'привет'.encode('cp1251')
+        except UnicodeDecodeError:
+            pass
+        else:
+            self.fail('%s expected' % UnicodeDecodeError)
 
-    def test_set_unicode_value(self):
-        value = self.field.to_xml(u'фывапро')
-        self.assertEqual(value.attrib.get('v'), u'фывапро')
+    def test_fail_set_non_string_value(self):
+        obj = self.Dummy()
+        try:
+            obj.field = object()
+        except TypeError:
+            pass
+        else:
+            self.fail('%s expected' % TypeError)
 
-    def test_fail_set_nonascii_bytestring_value(self):
-        self.assertRaises(ValueError, self.field.to_xml, 'фывапро')
 
-    def test_fail_set_invalid_value(self):
-        self.assertRaises(TypeError, self.field.to_xml, None)
-
-
-class DateTimeFieldTestCase(unittest.TestCase):
+class DatetimeTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.field = mapping.DateTimeField()
+        class Dummy(mapping.Mapping):
+            field = mapping.DateTimeField()
+        self.Dummy = Dummy
+        self.datetime = datetime.datetime(2009, 2, 13, 23, 31, 30)
+        self.date = datetime.datetime(2009, 2, 13)
 
-    def test_get_correct_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = '14.02.2009 02:31:30'
-        self.assertEqual(
-            self.field.to_python(elem),
-            datetime.datetime(2009, 02, 14, 02, 31, 30)
-        )
+    def test_get_value(self):
+        obj = self.Dummy(field=self.datetime)
+        self.assertEqual(obj.field, self.datetime)
 
-    def test_fail_get_invalid_format_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = '2009.02.14T02:31:30'
-        self.assertRaises(ValueError, self.field.to_python, elem)
+    def test_set_value(self):
+        obj = self.Dummy()
+        obj.field = self.datetime
+        self.assertEqual(obj.field, self.datetime)
 
-    def test_fail_get_invalid_value(self):
-        elem = xml.Element('f')
-        elem.attrib['v'] = 'foobar'
-        self.assertRaises(ValueError, self.field.to_python, elem)
-
-    def test_set_correct_type_attrib(self):
-        value = self.field.to_xml(datetime.datetime(2009, 02, 14, 02, 31, 30))
-        self.assertEqual(value.attrib.get('t'), 'D')
-
-    def test_set_correct_value(self):
-        value = self.field.to_xml(datetime.datetime(2009, 02, 14, 02, 31, 30))
-        self.assertEqual(value.attrib.get('v'), '14.02.2009 02:31:30')
+    def test_get_date_value(self):
+        obj = self.Dummy(field=self.datetime)
+        self.assertEqual(obj.field, self.datetime)
 
     def test_set_date_value(self):
-        value = self.field.to_xml(datetime.date(2009, 02, 14))
-        self.assertEqual(value.attrib.get('v'), '14.02.2009 00:00:00')
-
-    def test_fail_set_invalid_value(self):
-        self.assertRaises(TypeError, self.field.to_xml, '14.02.2009 02:31:30')
-
-
-class RefFieldTestCase(unittest.TestCase):
-
-    def setUp(self):
-        self.field = mapping.RefField()
-
-    def test_get_correct_value(self):
-        elem = xml.Element('r')
-        elem.attrib['i'] = '42'
-        self.assertEqual(self.field.to_python(elem), '42')
-
-    def test_get_float_value(self):
-        elem = xml.Element('r')
-        elem.attrib['i'] = '3.14'
-        self.assertEqual(self.field.to_python(elem), '3.14')
-
-    def test_get_custom_value(self):
-        elem = xml.Element('r')
-        elem.attrib['i'] = 'foobar'
-        self.assertEqual(self.field.to_python(elem), 'foobar')
-
-    def test_setter_creates_specific_xml_element(self):
-        elem = self.field.to_xml('42')
-        self.assertTrue(isinstance(elem, xml.ElementType))
-        self.assertEqual(elem.tag, 'r')
-        self.assertTrue('i' in elem.attrib)
-        self.assertEqual(elem.attrib['i'], '42')
-
-    def test_allow_integer_value(self):
-        elem = self.field.to_xml(42)
-        self.assertTrue(isinstance(elem, xml.ElementType))
-        self.assertEqual(elem.attrib['i'], '42')
-
-    def test_to_python_creates_special_value(self):
-        elem = xml.Element('r')
-        elem.attrib['i'] = 'foobar'
-        data = self.field.to_python(elem)
-        self.assertTrue(isinstance(data, mapping.Reference))
-
-    def test_fail_to_set_invalid_value(self):
-        self.assertRaises(TypeError, self.field.to_xml, 3.14)
-
+        obj = self.Dummy()
+        obj.field = self.datetime
+        self.assertEqual(obj.field, self.datetime)
 
 class ListFieldTestCase(unittest.TestCase):
-
-    def test_setter_creates_specific_xml_element(self):
-        f = mapping.ListField(mapping.Field())
-        elem = f.to_xml([])
-        self.assertTrue(isinstance(elem, xml.ElementType))
-        self.assertEqual(elem.tag, 's')
-        self.assertEqual(len(elem), 0)
-
-    def test_set_list_creates_child_elements(self):
-        f = mapping.ListField(mapping.Field())
-        elem = f.to_xml(['a', 'b', 'c'])
-        self.assertTrue(isinstance(elem, xml.ElementType))
-        self.assertEqual(elem.tag, 's')
-        self.assertEqual(len(elem), 3)
-        self.assertEqual(elem[0].attrib['v'], 'a')
-        self.assertEqual(elem[1].attrib['v'], 'b')
-        self.assertEqual(elem[2].attrib['v'], 'c')
-
-    def test_set_any_iterable(self):
-        class Iterable(object):
-            def __init__(self, queue):
-                self.queue = queue
-
-            def __iter__(self):
-                return self
-
-            def next(self):
-                if self.queue:
-                    return self.queue.pop(0)
-                else:
-                    raise StopIteration
-
-        f = mapping.ListField(mapping.Field())
-        elem = f.to_xml(Iterable(['a', 'b', 'c']))
-        self.assertTrue(isinstance(elem, xml.ElementType))
-        self.assertEqual(elem.tag, 's')
-        self.assertEqual(len(elem), 3)
-        self.assertEqual(elem[0].attrib['v'], 'a')
-        self.assertEqual(elem[1].attrib['v'], 'b')
-        self.assertEqual(elem[2].attrib['v'], 'c')
-
-    def test_fail_set_not_iterable(self):
-        f = mapping.ListField(mapping.Field())
-        self.assertRaises(TypeError, f.to_xml, 42)
 
     def test_getter_returns_list(self):
         class Dummy(mapping.Mapping):
@@ -665,19 +477,6 @@ class ListFieldTestCase(unittest.TestCase):
         self.assertTrue(isinstance(obj.numbers[0], mapping.Mapping))
         self.assertEqual(obj.numbers[0].positive, [1, 2, 3])
 
-    def test_list_of_references(self):
-        class Dummy(mapping.Mapping):
-            ids = mapping.ListField(mapping.RefField())
-        obj = Dummy()
-        obj.ids.append('foo')
-        obj.ids.append('bar')
-        obj.ids.append('baz')
-        root = obj.unwrap(xml.Element('root'))
-        self.assertEqual(root[0].tag, 's')
-        for elem in root[0]:
-            self.assertEqual(elem.tag, 'r')
-            self.assertTrue('i' in elem.attrib)
-
 
 class MappingTestCase(unittest.TestCase):
 
@@ -771,96 +570,6 @@ class MappingTestCase(unittest.TestCase):
         self.assertEqual(obj.numbers, new.numbers)
         obj.numbers.append(4)
         self.assertNotEqual(obj.numbers, new.numbers)
-
-    def test_wrap_single_node(self):
-        class Dummy(mapping.Mapping):
-            numbers = mapping.ListField(mapping.IntegerField())
-        root = xml.Element('content')
-        numbers = xml.Element('s', n='numbers')
-        numbers.append(xml.Element('f', v='1'))
-        numbers.append(xml.Element('f', v='2'))
-        numbers.append(xml.Element('f', v='3'))
-        root.append(numbers)
-        obj = Dummy.wrap(root)
-        self.assertEqual(obj.numbers, [1, 2, 3])
-
-    def test_wrap_tree(self):
-        class Dummy(mapping.Mapping):
-            numbers = mapping.ListField(mapping.IntegerField())
-            text = mapping.TextField(name='story')
-        root = xml.Element('root')
-        numbers = xml.Element('s', n='numbers')
-        numbers.append(xml.Element('f', v='1'))
-        numbers.append(xml.Element('f', v='2'))
-        numbers.append(xml.Element('f', v='3'))
-        root.append(numbers)
-        root.append(xml.Element('f', n='story', v='lorem...'))
-        tree = xml.ElementTree(root)
-        obj = Dummy.wrap(tree)
-        self.assertEqual(obj.numbers, [1, 2, 3])
-        self.assertEqual(obj.text, 'lorem...')
-
-    def test_wrap_with_defaults(self):
-        class Dummy(mapping.Mapping):
-            numbers = mapping.ListField(mapping.IntegerField())
-            text = mapping.TextField(name='story')
-        root = xml.Element('content')
-        numbers = xml.Element('s', n='numbers')
-        numbers.append(xml.Element('f', v='1'))
-        numbers.append(xml.Element('f', v='2'))
-        numbers.append(xml.Element('f', v='3'))
-        root.append(numbers)
-        data = {
-            'text': 'lorem...'
-        }
-        obj = Dummy.wrap(root, **data)
-        self.assertEqual(obj.numbers, [1, 2, 3])
-        self.assertEqual(obj.text, 'lorem...')
-
-    def test_fail_wrap_with_invalid_defaults(self):
-        class Dummy(mapping.Mapping):
-            numbers = mapping.ListField(mapping.IntegerField())
-            text = mapping.TextField(name='story')
-        root = xml.Element('s', n='numbers')
-        root.append(xml.Element('f', v='1'))
-        root.append(xml.Element('f', v='2'))
-        root.append(xml.Element('f', v='3'))
-        data = {
-            'missed': 'lorem...'
-        }
-        self.assertRaises(ValueError, Dummy.wrap, root, kwargs=data)
-
-    def test_fail_wrap_invalid_source(self):
-        class Dummy(mapping.Mapping):
-            numbers = mapping.ListField(mapping.IntegerField())
-        self.assertRaises(TypeError, Dummy.wrap, [1, 2, 3])
-
-    def test_fail_wrap_unnamed_node(self):
-        class Dummy(mapping.Mapping):
-            numbers = mapping.ListField(mapping.IntegerField())
-            text = mapping.TextField(name='story')
-        root = xml.Element('root')
-        numbers = xml.Element('s', n='numbers')
-        numbers.append(xml.Element('f', v='1'))
-        numbers.append(xml.Element('f', v='2'))
-        numbers.append(xml.Element('f', v='3'))
-        root.append(numbers)
-        root.append(xml.Element('f', v='lorem...'))
-        self.assertRaises(ValueError, Dummy.wrap, root)
-
-    def test_fail_wrap_unnamed_nodes_in_tree(self):
-        class Dummy(mapping.Mapping):
-            numbers = mapping.ListField(mapping.IntegerField())
-            text = mapping.TextField(name='story')
-        root = xml.Element('root')
-        numbers = xml.Element('s', n='numbers')
-        numbers.append(xml.Element('f', v='1'))
-        numbers.append(xml.Element('f', v='2'))
-        numbers.append(xml.Element('f', v='3'))
-        root.append(numbers)
-        root.append(xml.Element('f', v='lorem...'))
-        tree = xml.ElementTree(root)
-        self.assertRaises(ValueError, Dummy.wrap, tree)
 
     def test_keys(self):
         class Dummy(mapping.Mapping):
@@ -981,91 +690,24 @@ class MappingTestCase(unittest.TestCase):
         del obj['foo']
         self.assertEqual(obj['foo'], [])
 
-    def test_wrap_nested_dicts_and_lists(self):
-        class Dummy(mapping.Mapping):
-            pass
-        obj = Dummy(foo={'foo': [{}]})
-        root = obj.unwrap(xml.Element('root'))
-        obj2 = Dummy.wrap(root)
-        self.assertEqual(obj2['foo'], {'foo': [{}]})
-
-    def test_wrap_xml_stream(self):
-        class Dummy(mapping.Mapping):
-            pass
-        obj = Dummy(foo=[{'bar': 'baz'}, {'boo': 42}])
-        elem = obj.unwrap(xml.Element('o'))
-        stream = xml.parse(StringIO(xml.dump(elem)))
-        obj2 = Dummy.wrap(stream)
-        self.assertEqual(obj['foo'], obj2['foo'])
-
-    def test_wrap_xml_stream_should_have_object_root(self):
-        class Dummy(mapping.Mapping):
-            pass
-        obj = Dummy(foo='bar')
-        elem = obj.unwrap(xml.Element('foo'))
-        stream = xml.parse(StringIO(xml.dump(elem)))
-        self.assertEqual(Dummy.wrap(stream).to_python(), {'foo': 'bar'})
-
-    def test_to_python(self):
+    def test_convert_to_dict(self):
         class Dummy(mapping.Mapping):
             boo = mapping.AttributeField()
         obj = Dummy(foo='bar', baz=3.14, zoo=[1, 2, 3], boo='test')
         self.assertEqual(
-            obj.to_python(),
+            obj._asdict(),
             {'foo': 'bar', 'baz': 3.14, 'zoo': [1, 2, 3], 'boo': 'test'}
         )
 
 
 class ObjectFieldTestCase(unittest.TestCase):
 
-    def test_convert_xml_nodes_to_mapping(self):
-        field = mapping.ObjectField(mapping.Mapping.build(
-            text = mapping.TextField(),
-            numbers = mapping.ListField(mapping.IntegerField())
-        ))
-        root = xml.Element('o')
-        root.append(xml.Element('f', n='text', v='foobar'))
-        numbers = xml.Element('s', n='numbers')
-        numbers.append(xml.Element('f', v='1'))
-        numbers.append(xml.Element('f', v='2'))
-        numbers.append(xml.Element('f', v='3'))
-        root.append(numbers)
-        res = field.to_python(root)
-        self.assertEqual(res.text, 'foobar')
-        self.assertEqual(res.numbers, [1, 2, 3])
-
-    def test_init_from_dict(self):
-        field = mapping.ObjectField({
-            'text': mapping.TextField(),
-            'numbers': mapping.ListField(mapping.IntegerField())
-        })
-        root = xml.Element('o')
-        root.append(xml.Element('f', n='text', v='foobar'))
-        numbers = xml.Element('s', n='numbers')
-        numbers.append(xml.Element('f', v='1'))
-        numbers.append(xml.Element('f', v='2'))
-        numbers.append(xml.Element('f', v='3'))
-        root.append(numbers)
-        res = field.to_python(root)
-        self.assertEqual(res.text, 'foobar')
-        self.assertEqual(res.numbers, [1, 2, 3])
-
-    def test_setter_creates_specific_xml_element(self):
-        field = mapping.ObjectField(mapping.Mapping.build(
-            text = mapping.TextField(),
-            numbers = mapping.ListField(mapping.IntegerField())
-        ), name='baz')
-        elem = field.to_xml({'text': 'foobar', 'numbers': [1, 2, 3]})
-        self.assertTrue(isinstance(elem, xml.ElementType))
-        self.assertEqual(elem.tag, 'o')
-        self.assertEqual(elem.attrib['n'], 'baz')
-
     def test_fail_set_invalid_value(self):
         field = mapping.ObjectField(mapping.Mapping.build(
             text = mapping.TextField(),
             numbers = mapping.ListField(mapping.IntegerField())
         ), name='baz')
-        self.assertRaises(TypeError, field.to_xml, [1, 2, 42])
+        self.assertRaises(TypeError, field._set_value, [1, 2, 42])
 
     def test_with_mapping(self):
         class Dummy(mapping.Mapping):
