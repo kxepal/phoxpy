@@ -195,7 +195,7 @@ class Mapping(object):
         if isinstance(data, dict):
             return cls(**data)
         else:
-            return cls.wrap(xml.decode(data))
+            return cls.to_python(data)
 
     def unwrap(self):
         return self._data
