@@ -152,7 +152,7 @@ class Mapping(object):
         return self.keys()
 
     def __repr__(self):
-        return '<%s %s>' % (type(self).__name__, self.to_python())
+        return '<%s %s>' % (type(self).__name__, self._asdict())
 
     def _asdict(self):
         return dict(self.items())
