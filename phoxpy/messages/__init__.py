@@ -7,29 +7,28 @@
 # you should have received as part of this distribution.
 #
 
+from phoxpy import exceptions
 from phoxpy import xml
+from phoxpy.xmlcodec import PhoxDecoder, PhoxEncoder
 from phoxpy.mapping import MetaMapping, Mapping, AttributeField
 
 __all__ = ['Message', 'PhoxRequest', 'PhoxResponse']
 
 class Message(Mapping):
-    """Base communication message mapping.
+    """Base communication message mapping."""
 
-    :param sessionid: Session id.
-    :type sessionid: str
-    """
+    # Unique session id. Sets automatically after successful auth.
     sessionid = AttributeField()
 
     def __str__(self):
         raise NotImplementedError('Should be implemented for each message type')
 
-    def unwrap(self, root=None, content=None):
-        if root is None:
-            root = xml.Element('content')
-        elif content is None:
-            content = xml.Element('content')
-            root.append(content)
-        return super(Message, self).unwrap(root, content)
+    @classmethod
+    def to_python(cls, xmlsrc):
+        return xml.decode(xmlsrc, PhoxMessageDecoder)
+
+    def to_xml(self):
+        return xml.encode(self, PhoxMessageEncoder)
 
 
 class MetaPhoxRequest(MetaMapping):
@@ -51,87 +50,118 @@ class MetaPhoxRequest(MetaMapping):
 
 
 class PhoxRequest(Message):
-    """Base request message.
-
-    :param type: Message type.
-    :type type: str
-
-    :param buildnumber: Client build number.
-    :type buildnumber: str
-
-    :param version: Server version number.
-    :type version: str
-    """
+    """Base request message."""
     __metaclass__ = MetaPhoxRequest
 
+    #: Request type.
     type = AttributeField()
+    #: Build number. Should be same as server one.
     buildnumber = AttributeField()
+    #: Server version.
     version = AttributeField()
 
-    def __init__(self, **data):
-        super(PhoxRequest, self).__init__(**data)
+    def __init__(self, **kwargs):
+        super(PhoxRequest, self).__init__(**kwargs)
         assert self.type is not None
 
     def __str__(self):
         doctype = ('phox-request', 'SYSTEM', 'phox.dtd')
-        return xml.dump(self.unwrap(), doctype=doctype)
-
-    @classmethod
-    def wrap_xmlelem(cls, xmlelem, defaults):
-        defaults.update(xmlelem.attrib)
-        assert 'type' in defaults
-        root = xmlelem.find('content')
-        assert root is not None
-        return super(PhoxRequest, cls).wrap_xmlelem(root, defaults)
-
-    @classmethod
-    def wrap_stream(cls, stream, defaults):
-        event, elem = stream.next()
-        assert event == 'start' and elem.tag == 'phox-request'
-        defaults.update(dict(elem.attrib.items()))
-        assert 'type' in defaults
-        return super(PhoxRequest, cls).wrap_stream(stream, defaults)
-
-    def unwrap(self):
-        root = xml.Element('phox-request')
-        content = xml.Element('content')
-        root.append(content)
-        return super(PhoxRequest, self).unwrap(root, content)
+        return xml.dump(self.to_xml(), doctype=doctype)
 
 
 class PhoxResponse(Message):
-    """Base phox response message. Used as answer on phox requests messages.
+    """Base phox response message. Used as answer on phox requests messages."""
 
-    :param buildnumber: Build number.
-    :type buildnumber: str
-    """
-
+    #: Server build number.
     buildnumber = AttributeField()
 
     def __str__(self):
         doctype = ('phox-response', 'SYSTEM', 'phox.dtd')
-        return xml.dump(self.unwrap(), doctype=doctype)
+        return xml.dump(self.to_xml(), doctype=doctype)
 
-    @classmethod
-    def wrap_xmlelem(cls, xmlelem, defaults):
-        root = xmlelem.find('content/o')
-        assert root is not None, xml.dump(xmlsrc)
-        defaults.update(xmlelem.attrib.items())
-        return super(PhoxResponse, cls).wrap_xmlelem(root, defaults)
 
-    @classmethod
-    def wrap_stream(cls, stream, defaults):
+class PhoxMessageDecoder(PhoxDecoder):
+    """Decoder for LIS specific messages."""
+
+    def __init__(self, *args, **kwargs):
+        super(PhoxMessageDecoder, self).__init__(*args, **kwargs)
+        self.handlers.update({
+            ('content', ()): self.decode_content,
+            ('error', ()): self.decode_error,
+            ('phox-request', ()): self.decode_phox_request,
+            ('phox-response', ()): self.decode_phox_response,
+        })
+
+    def decode_error(self, stream, endelem):
         event, elem = stream.next()
-        assert event == 'start' and elem.tag == 'phox-response'
-        defaults.update(elem.attrib.items())
-        event, elem = stream.next()
-        assert event == 'start' and elem.tag == 'content'
-        return super(PhoxResponse, cls).wrap_stream(stream, defaults)
+        assert event == 'end' and elem is endelem
+        code = elem.attrib['code']
+        descr = elem.attrib.get('description', '')
+        raise exceptions.get_error_class(int(code))(descr.encode('utf-8'))
 
-    def unwrap(self):
+    def decode_content(self, stream, endelem):
+        if len(endelem) and endelem[0].tag == 'o':# hope we hit it in same chunk
+            event, endelem = stream.next()
+            result = self.decode_object_field(stream, endelem)
+            stream.next() # fire `o` tag closing event
+            return result
+        return self.decode_object_field(stream, endelem)
+
+    def decode_phox_request(self, stream, endelem):
+        cls = PhoxRequest
+        headers = dict(endelem.attrib.items())
+        data = self.decode(stream)
+        data.update(headers)
+        return cls(**data)
+
+    def decode_phox_response(self, stream, endelem):
+        cls = PhoxResponse
+        headers = dict(endelem.attrib.items())
+        data = self.decode(stream)
+        data.update(headers)
+        return cls(**data)
+
+
+class PhoxMessageEncoder(PhoxEncoder):
+    """Encoder for LIS specific messages to XML data."""
+
+    def __init__(self, *args, **kwargs):
+        super(PhoxMessageEncoder, self).__init__(*args, **kwargs)
+        self.handlers.update({
+            Message: self.encode_message,
+            PhoxRequest: self.encode_phox_request,
+            PhoxResponse: self.encode_phox_response,
+        })
+
+    def encode_message(self, name, value):
+        content = self.encode(value._asdict())
+        content.tag = 'content'
+        return content
+
+    def encode_phox_request(self, name, value):
+        elem = self.encode(value._asdict())
+        root = xml.Element('phox-request')
+
+        root.attrib.update(elem.attrib.items())
+        elem.attrib.clear()
+
+        elem.tag = 'content'
+        root.append(elem)
+        return root
+
+    def encode_phox_request_new(self, name, value):
+        root = self.encode_phox_response(value)
+        root.tag = 'phox-request'
+        return root
+
+    def encode_phox_response(self, name, value):
+        elem = self.encode(value._asdict())
         root = xml.Element('phox-response')
+
+        root.attrib.update(elem.attrib.items())
+        elem.attrib.clear()
+
         content = xml.Element('content')
-        obj = xml.Element('o')
-        content.append(obj)
+        content.append(elem)
         root.append(content)
-        return super(PhoxResponse, self).unwrap(root, obj)
+        return root

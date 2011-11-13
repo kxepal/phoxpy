@@ -30,19 +30,11 @@ class MessageTestCase(unittest.TestCase):
         msg.sessionid = 'baz'
         self.assertEqual(msg.sessionid, 'baz')
 
-    def test_unwrap_default_tag(self):
+    def test_to_xml_default_tag(self):
         class Post(messages.Message):
             ids = mapping.ListField(mapping.RefField())
-        root = Post(ids=['1', '2', '3']).unwrap()
+        root = Post(ids=['1', '2', '3']).to_xml()
         self.assertEqual(root.tag, 'content')
-
-    def test_unwrap_sets_content_tag(self):
-        class Post(messages.Message):
-            ids = mapping.ListField(mapping.RefField())
-        foo = xml.Element('foo')
-        root = Post(ids=['foo', 'bar', 'baz']).unwrap(foo)
-        self.assertEqual(root.tag, 'foo')
-        self.assertEqual(root[0].tag, 'content')
 
 
 class PhoxRequestTestCase(unittest.TestCase):
@@ -63,30 +55,30 @@ class PhoxRequestTestCase(unittest.TestCase):
         msg = messages.PhoxRequest(type='foo', version='bar')
         self.assertEqual(msg.version, 'bar')
 
-    def test_wrap_should_containt_attrib_type(self):
+    def test_to_python_should_containt_attrib_type(self):
         root = xml.Element('phox-request')
         root.append(xml.Element('content'))
-        self.assertRaises(AssertionError, messages.PhoxRequest.wrap, root)
+        self.assertRaises(AssertionError, messages.PhoxRequest.to_python, root)
 
-    def test_wrap(self):
+    def test_to_python(self):
         root = xml.Element('phox-request')
         root.attrib['type'] = 'foo'
         root.append(xml.Element('content'))
-        req = messages.PhoxRequest.wrap(root)
+        req = messages.PhoxRequest.to_python(root)
         self.assertEqual(req.type, 'foo')
 
-    def test_wrap_stream(self):
+    def test_to_python_stream(self):
         stream = xml.parse(StringIO('''<phox-request type="foo">
         <content><f n="bar" t="S" v="baz" /></content>
         </phox-request>'''))
-        req = messages.PhoxRequest.wrap(stream)
+        req = messages.PhoxRequest.to_python(stream)
         self.assertEqual(req.type, 'foo')
         self.assertEqual(req['bar'], 'baz')
 
-    def test_unwrap(self):
+    def test_to_xml(self):
         msg = messages.PhoxRequest(type='foo', sessionid='bar',
                                    version='baz', buildnumber='zoo')
-        data = msg.unwrap()
+        data = msg.to_xml()
         self.assertEqual(data.tag, 'phox-request')
 
         self.assertTrue('type' in data.attrib)
@@ -122,9 +114,9 @@ class PhoxResponseTestCase(unittest.TestCase):
         msg = messages.PhoxResponse(buildnumber='bar')
         self.assertEqual(msg.buildnumber, 'bar')
 
-    def test_unwrap(self):
+    def test_to_xml(self):
         msg = messages.PhoxResponse(sessionid='bar',  buildnumber='baz')
-        data = msg.unwrap()
+        data = msg.to_xml()
         self.assertEqual(data.tag, 'phox-response')
 
         self.assertTrue('sessionid' in data.attrib)
@@ -143,7 +135,7 @@ class PhoxResponseTestCase(unittest.TestCase):
             '</phox-response>' % xml.ENCODING
         )
 
-    def test_wrap_stream(self):
+    def test_to_python_stream(self):
         stream = xml.parse(StringIO("<?xml version='1.0' encoding='utf-8'?>\n"
             '<!DOCTYPE phox-response SYSTEM "phox.dtd">\n'
             '<phox-response>'
@@ -153,7 +145,7 @@ class PhoxResponseTestCase(unittest.TestCase):
             '<f n="baz" v="baz" t="S"/>'
             '</s></o></content>'
             '</phox-response>'))
-        msg = messages.PhoxResponse.wrap(stream)
+        msg = messages.PhoxResponse.to_python(stream)
         self.assertEqual(sorted(['foo', 'bar', 'baz']), sorted(msg['fbb']))
 
 
