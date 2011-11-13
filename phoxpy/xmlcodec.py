@@ -254,15 +254,19 @@ class PhoxEncoder(Encoder):
 
     def get_handler(self, value):
         tval = type(value)
-        maybe_right_handler = None
+        if tval in self.handlers:
+            return self.handlers[tval]
+        maybe_right_handlers = []
         for pytype, handler in self.handlers.items():
-            if tval is pytype:
-                return handler
-            elif isinstance(value, pytype):
-                maybe_right_handler = handler
-        if maybe_right_handler is None:
+            if isinstance(value, pytype):
+                if pytype in tval.__bases__:
+                    maybe_right_handlers.append((10, handler))
+                else:
+                    maybe_right_handlers.append((1, handler))
+        if not maybe_right_handlers:
             return self.encode_default
-        return maybe_right_handler
+        maybe_right_handlers.sort()
+        return maybe_right_handlers[-1][1]
 
     def encode(self, value):
         """Encodes to Python object :class:`phoxpy.xml.Element`."""
