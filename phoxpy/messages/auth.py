@@ -15,71 +15,41 @@ from phoxpy.mapping import BooleanField, IntegerField, ListField, LongField, \
 __all__ = ['AuthRequest', 'AuthResponse']
 
 class AuthRequest(PhoxRequest, 'login'):
-    """Authentication request message.
+    """Authentication request message."""
 
-    :param client_id: License string heavy binded to computer hardware.
-    :type client_id: str
-
-    :param company: Company name.
-    :type company: str
-
-    :param instance_count: Instance count.
-    :type instance_count: int
-
-    :param lab: Laboratory name.
-    :type lab: str
-
-    :param login: Login name.
-    :type login: str
-
-    :param machine: Client hostname.
-    :type machine: str
-    
-    :param password: Related password.
-    :type password: str
-
-    :param session_code: Secret session code.
-    :type session_code: int
-    """
+    #: License string that heavy depended on host hardware.
     client_id = TextField(name='clientId')
+    #: Company name.
     company = TextField(default='')
+    #: Instance count.
     instance_count = IntegerField(name='instanceCount', default=0)
+    #: Laboratory name.
     lab = TextField(default='')
+    #: Login name.
     login = TextField()
-    machine = TextField()
+    #: Client hostname.
+    hostname = TextField(name='machine')
+    #: Related password.
     password = TextField()
+    #: Secret session code.
     session_code = IntegerField(name='sessionCode',
                                 default=lambda: randint(10000, 20000))
 
 
 class AuthResponse(PhoxResponse):
-    """Authentication response message.
+    """Authentication response message."""
 
-    :param admin_mode: Flag of admin mode usage.
-    :type admin_mode: bool
-
-    :param departments: List of department ids which user is belong to.
-    :type departments: list
-
-    :param employee: Referenced Employee object id.
-    :type employee: int
-
-    :param hospitals: List of hospital ids which user is belong to.
-    :type  hospitals: list
-
-    :param rights: List of active permission ids.
-    :type  rights: list
-
-    :param server_version: Server version string.
-    :type server_version: str
-
-    :param session_code: Session code number.
-    :type session_code: int or long
-    """
+    #: Flag of admin mode usage.
     admin_mode = BooleanField(name='adminMode')
+    #: List of department ids which user is belong to.
     departments = ListField(RefField())
+    #: Referenced Employee object id.
     employee = RefField()
+    #: List of hospital ids which user is belong to.
     hospitals = ListField(RefField())
+    #: List of active permission ids.
     rights = ListField(RefField())
+    #: Server version string.
     server_version = TextField(name='serverVersion')
+    #: Session code number.
     session_code = LongField(name='sessionCode')
