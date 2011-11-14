@@ -10,7 +10,6 @@
 import inspect
 from phoxpy import http
 from phoxpy import xml
-from phoxpy.exceptions import handle_lis_error
 from phoxpy.messages import Message, PhoxRequest, PhoxResponse
 from phoxpy.messages import auth
 
@@ -63,9 +62,7 @@ class PhoxResource(http.Resource):
         elif isinstance(body, xml.ElementType):
             body = xml.dump(body)
         status, headers, data = self.post(path, body, headers, **params)
-        if isinstance(data, http.ResponseBody):
-            return status, headers, xml.parse(data)
-        return status, headers, handle_lis_error(xml.load(data.read()))
+        return status, headers, xml.parse(data)
 
 
 class Session(object):
@@ -90,7 +87,7 @@ class Session(object):
             client_id=client_id,
             **data
         )
-        self._resmsg = auth.AuthResponse(sessionid='')
+        self._resmsg = auth.AuthResponse()
         self._resource = None
 
     def open(self, url, http_session=None):
@@ -104,7 +101,7 @@ class Session(object):
 
         :return: self
         """
-        self._resource = PhoxResource(url, session=http_session)
+        self.resource = PhoxResource(url, session=http_session)
         self._resmsg = self.request(body=self._reqmsg, wrapper=auth.AuthResponse)
         return self
 
@@ -143,16 +140,20 @@ class Session(object):
         if wrapper is None:
             wrapper = PhoxResponse
         if inspect.isclass(wrapper) and issubclass(wrapper, Message):
-            wrapper = wrapper.wrap
+            wrapper = wrapper.to_python
         return wrapper(
-            self._resource.post_xml(path, body, headers, **params)[2]
+            self.resource.post_xml(path, body, headers, **params)[2]
         )
+
+    def sign(self, message):
+        assert isinstance(message, Message)
+        message.header.sessionid = self.id
 
     def close(self):
         """Closes current active session."""
-        assert self._resource is not None, 'Session has not been activated.'
+        assert self.is_active(), 'Session has not been activated.'
         self.request(body=PhoxRequest(type='logout'))
-        self._resmsg = auth.AuthResponse(sessionid='')
+        self._resmsg = auth.AuthResponse()
         return True
 
     def is_active(self):
