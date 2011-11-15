@@ -133,10 +133,7 @@ class Session(object):
         :return: Response message.
         :rtype: :class:`~phoxpy.messages.PhoxResponse`
         """
-        if body is not None and not isinstance(body, Message):
-            raise TypeError('Message instance or None expected, got %r' % body)
-        if isinstance(body, Message):
-            body.sessionid = self.id
+        self.sign(body)
         if wrapper is None:
             wrapper = PhoxResponse
         if inspect.isclass(wrapper) and issubclass(wrapper, Message):
@@ -146,8 +143,13 @@ class Session(object):
         )
 
     def sign(self, message):
-        assert isinstance(message, Message)
-        message.header.sessionid = self.id
+        if isinstance(message, Message):
+            message.sessionid = self.id
+        elif isinstance(message, xml.ElementType):
+            message.attrib['sessionid'] = self.id
+        elif message is not None:
+            raise TypeError('Invalid message %r' % message)
+
 
     def close(self):
         """Closes current active session."""
