@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+from phoxpy.server.auth import AuthExt
 from phoxpy.server.main import BaseLisServer
 
 
@@ -14,3 +15,4 @@ class SimpleLISServer(BaseLisServer):
     """Simple mock LIS server."""
     def __init__(self, *args, **kwargs):
         super(SimpleLISServer, self).__init__(*args, **kwargs)
+        self.extend('auth', AuthExt)
