@@ -44,8 +44,18 @@ class MetaPhoxRequest(MetaMapping):
         return super(MetaPhoxRequest, mcs).__new__(mcs, name, tuple(bases), data)
 
     def __call__(cls, *args, **data):
+        # TODO: fix decoder workaround
+        def to_python(cls, xmlsrc):
+            class LocalPhoxMessageDecoder(PhoxMessageDecoder):
+                def decode_phox_request(self, stream, endelem):
+                    headers = dict(endelem.attrib.items())
+                    data = self.decode(stream)
+                    data.update(headers)
+                    return cls(**data)
+            return xml.decode(xmlsrc, LocalPhoxMessageDecoder)
         if cls._request_type is not None:
             data['type'] = cls._request_type
+        cls.to_python = classmethod(to_python)
         return super(MetaPhoxRequest, cls).__call__(*args, **data)
 
 
