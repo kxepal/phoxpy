@@ -64,8 +64,4 @@ class AuthExt(ServerExtension):
 
         self.db['sessions'].remove(request.sessionid)
 
-        return PhoxResponse(
-            buildnumber=request.buildnumber,
-            sessionid=request.sessionid,
-            version=request.version
-        )
+        return PhoxResponse(sessionid=request.sessionid)
