@@ -67,7 +67,7 @@ def load(session, name, ids=None):
     ids = maybe_item_or_ids(ids)
     resp = session.request(body=DirectoryLoad(name=name, elements=ids))
     for item in resp[name]:
-        yield item.to_python()
+        yield item.unwrap()
 
 def store(session, name, item):
     """Stores directory object on server.
@@ -90,7 +90,7 @@ def store(session, name, item):
     else:
         messagecls = DirectorySave
     if isinstance(item, Mapping):
-        item = item.to_python()
+        item = item.unwrap()
     item.pop('removed', None) # This field could be received by .load()
                               # function, but it shouldn't pass to
                               # .save() one. Removing it manually is not
@@ -124,7 +124,15 @@ def remove(session, name, ids):
     else:
         message = DirectoryRemove(directory=name, ids=ids)
         # let's say "thanks" for unstructured answer
-        wrapper = lambda el: el.find('content/f').attrib['v']
+        def wrapper(stream):
+            stream.next() # phox-response
+            stream.next() # content
+            event, elem = stream.next()
+            assert event == 'start' and elem.tag == 'f'
+            version = int(elem.attrib['v'])
+            for item in stream: # cleanup
+                pass
+            return version
         resp = session.request(body=message, wrapper=wrapper)
         return resp
 
