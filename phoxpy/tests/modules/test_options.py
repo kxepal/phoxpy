@@ -12,7 +12,7 @@ from phoxpy import client
 from phoxpy.server import MockHttpSession, SimpleLISServer
 from phoxpy.modules import options
 
-class DirectoryTestCase(unittest.TestCase):
+class OptionsTestCase(unittest.TestCase):
 
     def setUp(self):
         server = SimpleLISServer('4.2', '31415')
@@ -32,3 +32,7 @@ class DirectoryTestCase(unittest.TestCase):
         self.assertEqual(data['foo'], 'bar')
         self.assertTrue('bar' in data)
         self.assertEqual(data['bar'], '42')
+
+
+if __name__ == '__main__':
+    unittest.main()
