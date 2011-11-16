@@ -277,7 +277,7 @@ class PhoxEncoder(Encoder):
 
     def encode_value(self, tagname, name, value, **attribs):
         elem = self.Element(tagname)
-        if name:
+        if name is not None:
             elem.attrib['n'] = name
         if value is not None:
             elem.attrib['v'] = unicode(value)
