@@ -110,7 +110,7 @@ class PhoxMessageDecoder(PhoxDecoder):
         raise exceptions.get_error_class(int(code))(descr.encode('utf-8'))
 
     def decode_content(self, stream, endelem):
-        if len(endelem) and endelem[0].tag == 'o':# hope we hit it in same chunk
+        if len(endelem) == 1 and endelem[0].tag == 'o':
             event, endelem = stream.next()
             result = self.decode_object_field(stream, endelem)
             stream.next() # fire `o` tag closing event
