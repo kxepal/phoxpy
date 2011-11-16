@@ -15,11 +15,11 @@ except ImportError:
 
 setup(
     name = 'phoxpy',
-    version = '0.1a',
+    version = '0.1',
     description = 'Python client to Laboratory Information System',
     long_description = \
-"""This is a Python library for Laboratory Information System, propietary
-software product of RosLabSystem company.""",
+"""This is a Python library that implements protocol and base operations with
+RosLabSystems Laboratory Information System software.""",
     author = 'Alexander Shorin',
     author_email = 'kxepal@gmail.com',
     license = 'BSD',
