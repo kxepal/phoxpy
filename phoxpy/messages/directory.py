@@ -35,28 +35,18 @@ class DirectoryRequestNewMixIn(PhoxRequest):
 
 
 class DirectoryLoad(PhoxRequest, 'directory'):
-    """Message for request type ``directory``.
-
-    :param name: Directory data source name.
-    :type name: str
-
-    :param elements: List of object ids. If None all data will be requests.
-    :type elements: list of int
-    """
+    """Message for request type ``directory``."""
+    #: Directory data source name.
     name = TextField()
+    #: List of object ids. If None all of them will be requests.
     elements = ListField(RefField())
 
 
 class DirectorySave(PhoxRequest, 'directory-save'):
-    """Message for request type ``directory-save``.
-
-    :param directory: Directory data source name.
-    :type directory: str
-
-    :param element: Object mapping instance.
-    :type element: :class:`~phoxpy.mapping.Mapping`
-    """
+    """Message for request type ``directory-save``."""
+    #: Directory data source name.
     directory = TextField()
+    #: Directory element to save.
     element = ObjectField(Mapping.build(id=AttributeField()))
 
 
@@ -68,15 +58,10 @@ class DirectorySaveNew(DirectoryRequestNewMixIn, DirectorySave,
 
 
 class DirectoryRemove(PhoxRequest, 'directory-remove'):
-    """Message for request type ``directory-remove``.
-
-    :param directory: Directory data source name.
-    :type directory: str
-
-    :param ids: List of object ids.
-    :type ids: list
-    """
+    """Message for request type ``directory-remove``."""
+    #: Directory data source name.
     directory = TextField()
+    #: List of object ids to remove.
     ids = ListField(RefField())
 
 
@@ -88,15 +73,10 @@ class DirectoryRemoveNew(DirectoryRequestNewMixIn, DirectoryRemove,
 
 
 class DirectoryRestore(PhoxRequest, 'directory-restore'):
-    """Message for request type ``directory-restore``.
-
-    :param directory: Directory data source name.
-    :type directory: str
-
-    :param ids: List of object ids.
-    :type ids: list
-    """
+    """Message for request type ``directory-restore``."""
+    #: Directory data source name.
     directory = TextField()
+    #: List of object ids to restore.
     ids = ListField(RefField())
 
 
