@@ -155,3 +155,26 @@ def restore(session, name, ids):
     message = DirectoryRestore(directory=name, ids=ids)
     session.request(body=message)
     return True
+
+def changes(session, init_versions=None):
+    """Setups infinity changes feed in all or specified directories.
+
+    :param session: Active session instance.
+    :type session: :class:`~phoxpy.client.Session`
+
+    :param init_versions: Initial mapping of directory names to their versions.
+                          If omitted, all directories will be listening.
+    :type init_versions: dict
+
+    :yields: 2-element tuple with directory name and his new version.
+    """
+    versions = init_versions or {}
+    if not versions:
+        for name, version in items(session):
+            versions[name] = version
+            yield name, version
+    while True:
+        for name, version in items(session):
+            if name in versions and versions[name] < version:
+                yield name, version
+                versions[name] = version

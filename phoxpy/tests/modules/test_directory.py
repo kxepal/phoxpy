@@ -126,5 +126,17 @@ class DirectoryTestCase(unittest.TestCase):
         assert directory.restore(self.session, 'foo', '42')
         self.assertTrue(not self.db['foo']['42'].get('removed', False))
 
+    def test_changes(self):
+        feed = directory.changes(self.session)
+        self.assertTrue(isinstance(feed, types.GeneratorType))
+        data = [feed.next(), feed.next()]
+        self.assertEqual(sorted([('foo', 5), ('abc', 3)]), sorted(data))
+        self.db['abc'].set({'foo': 'bar'})
+        self.assertEqual(('abc', 4), feed.next())
+
+    def test_specific_changes(self):
+        feed = directory.changes(self.session, init_versions={'foo': 2})
+        self.assertEqual(('foo', 5), feed.next())
+
 if __name__ == '__main__':
     unittest.main()
