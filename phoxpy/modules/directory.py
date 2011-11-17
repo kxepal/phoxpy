@@ -50,7 +50,7 @@ def items(session):
     for db in resp['versions']:
         yield db['name'], db['version']
 
-def load(session, name, ids=None):
+def load(session, name, ids=None, removed=False):
     """Loads data from specified directory.
 
     :param session: Active session instance.
@@ -62,11 +62,16 @@ def load(session, name, ids=None):
     :param ids: List of object ids. If omitted, all objects will be loaded.
     :type ids: list
 
+    :param removed: Allows to yield removed items if set as True.
+    :type removed: bool
+
     :yields: Directory objects as dict.
     """
     ids = maybe_item_or_ids(ids)
     resp = session.request(body=DirectoryLoad(name=name, elements=ids))
     for item in resp[name]:
+        if not removed and item.get('removed', False):
+            continue
         yield item.unwrap()
 
 def store(session, name, item):

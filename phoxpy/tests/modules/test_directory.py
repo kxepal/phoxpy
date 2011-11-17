@@ -77,6 +77,17 @@ class DirectoryTestCase(unittest.TestCase):
         else:
             self.fail('Unexpectable item %r' % item)
 
+    def test_load_not_removed(self):
+        self.db['foo']['42']['removed'] = True
+        items = list(directory.load(self.session, 'foo', ['42', '3.14']))
+        self.assertEqual(items, [self.db['foo']['3.14']])
+
+    def test_load_removed(self):
+        self.db['foo']['42']['removed'] = True
+        items = directory.load(self.session, 'foo', ['42', '3.14'], removed=True)
+        data = [self.db['foo']['42'], self.db['foo']['3.14']]
+        self.assertEqual(sorted(items), sorted(data))
+
     def test_store(self):
         item = self.db['foo']['42']
         self.assertTrue('source' not in item)
