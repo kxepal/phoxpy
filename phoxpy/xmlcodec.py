@@ -83,6 +83,8 @@ class PhoxDecoder(Decoder):
             ('f', (('t', 'L'),)): self.decode_long_field,
             ('f', (('t', 'F'),)): self.decode_float_field,
             ('f', (('t', 'S'),)): self.decode_text_field,
+            # TODO: test next mapping
+            ('f', (('t', 'WorkCreateMode'),)): self.decode_text_field,
             ('f', (('t', 'D'),)): self.decode_datetime_field,
             ('r', ()): self.decode_ref_field,
             ('s', ()): self.decode_list_field,
