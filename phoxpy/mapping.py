@@ -18,10 +18,23 @@ import datetime
 from phoxpy import xml
 from phoxpy.xmlcodec import Attribute
 from phoxpy.xmlcodec import Reference
+from phoxpy.xmlcodec import PhoxEncoder
 
 __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
            'TextField', 'DateTimeField', 'RefField', 'ListField', 'ObjectField',
-           'Mapping']
+           'Mapping', 'PhoxMappingEncoder']
+
+class PhoxMappingEncoder(PhoxEncoder):
+
+    def __init__(self, *args, **kwargs):
+        super(PhoxMappingEncoder, self).__init__(*args, **kwargs)
+        self.handlers.update({
+            Mapping: self.encode_mapping,
+        })
+
+    def encode_mapping(self, name, value):
+        return self.encode_object_field(name, value.unwrap())
+
 
 class MetaField(type):
 
@@ -172,7 +185,7 @@ class Mapping(object):
         return field
 
     def to_xml(self):
-        return xml.encode(self.unwrap())
+        return xml.encode(self.unwrap(), PhoxMappingEncoder)
 
     @classmethod
     def to_python(cls, xmlsrc):

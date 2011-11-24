@@ -699,6 +699,14 @@ class MappingTestCase(unittest.TestCase):
             {'foo': 'bar', 'baz': 3.14, 'zoo': [1, 2, 3], 'boo': 'test'}
         )
 
+    def test_to_xml_with_nested_mapping(self):
+        class Foo(mapping.Mapping):
+            bar = mapping.TextField()
+        class Dummy(mapping.Mapping):
+            foo = mapping.ObjectField(Foo)
+        obj = Dummy()
+        obj.foo.bar = 'baz'
+        obj.to_xml()
 
 class ObjectFieldTestCase(unittest.TestCase):
 
