@@ -253,16 +253,23 @@ class PhoxEncoder(Encoder):
             self.handlers.update(handlers)
 
     def get_handler(self, value):
+        def get_type_rating(tval, cls, score=10):
+            if tval is cls:
+                return score
+            rates = []
+            for base in cls.__bases__:
+                rates.append(get_type_rating(tval, base, score-1))
+            if rates:
+                return sorted(rates)[-1]
         tval = type(value)
         if tval in self.handlers:
             return self.handlers[tval]
         maybe_right_handlers = []
         for pytype, handler in self.handlers.items():
             if isinstance(value, pytype):
-                if pytype in tval.__bases__:
-                    maybe_right_handlers.append((10, handler))
-                else:
-                    maybe_right_handlers.append((1, handler))
+                rate = get_type_rating(pytype, tval)
+                if rate is not None:
+                    maybe_right_handlers.append((rate, handler))
         if not maybe_right_handlers:
             return self.encode_default
         maybe_right_handlers.sort()
