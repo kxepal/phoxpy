@@ -7,7 +7,6 @@
 # you should have received as part of this distribution.
 #
 
-from phoxpy import xml
 from phoxpy.messages import PhoxRequest
 from phoxpy.mapping import Mapping, ObjectField, ListField, \
                            RefField, TextField, AttributeField
@@ -15,24 +14,6 @@ from phoxpy.mapping import Mapping, ObjectField, ListField, \
 __all__ = ['DirectoryLoad', 'DirectorySave', 'DirectorySaveNew',
            'DirectoryRemove', 'DirectoryRemoveNew', 'DirectoryRestore',
            'DirectoryVersions']
-
-class DirectoryRequestNewMixIn(PhoxRequest):
-    """MixIn to generate XML output in required format."""
-    def unwrap(self):
-        root = xml.Element('phox-request')
-        content = xml.Element('content')
-        obj = xml.Element('o')
-        content.append(obj)
-        root.append(content)
-        return super(PhoxRequest, self).unwrap(root, obj)
-
-    @classmethod
-    def wrap_xmlelem(cls, xmlelem, defaults):
-        defaults.update(xmlelem.attrib)
-        root = xmlelem.find('content/o')
-        assert root is not None
-        return super(PhoxRequest, cls).wrap_xmlelem(root, defaults)
-
 
 class DirectoryLoad(PhoxRequest, 'directory'):
     """Message for request type ``directory``."""
@@ -50,8 +31,7 @@ class DirectorySave(PhoxRequest, 'directory-save'):
     element = ObjectField(Mapping.build(id=AttributeField()))
 
 
-class DirectorySaveNew(DirectoryRequestNewMixIn, DirectorySave,
-                       'directory-save-new'):
+class DirectorySaveNew(DirectorySave,'directory-save-new'):
     """Message for request type ``directory-save-new``.
     Applies to only specific group of directories which are listed in
     :const:`~phoxpy.modules.directory.DIRS_FOR_NEW_PROC`."""
@@ -65,8 +45,7 @@ class DirectoryRemove(PhoxRequest, 'directory-remove'):
     ids = ListField(RefField())
 
 
-class DirectoryRemoveNew(DirectoryRequestNewMixIn, DirectoryRemove,
-                         'directory-remove-new'):
+class DirectoryRemoveNew(DirectoryRemove, 'directory-remove-new'):
     """Message for request type ``directory-remove-new``.
     Applies to only specific group of directories which are listed in
     :const:`~phoxpy.modules.directory.DIRS_FOR_NEW_PROC`."""
