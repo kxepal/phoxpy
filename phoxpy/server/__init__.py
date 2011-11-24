@@ -11,6 +11,7 @@ from cStringIO import StringIO
 from phoxpy.server.auth import AuthExt
 from phoxpy.server.directory import DirectoryExt
 from phoxpy.server.options import OptionsExt
+from phoxpy.server.requests import RequestsExt
 from phoxpy.server.main import BaseLisServer
 
 class MockHttpSession(object):
@@ -30,3 +31,4 @@ class SimpleLISServer(BaseLisServer):
         self.extend('auth', AuthExt)
         self.extend('dirs', DirectoryExt)
         self.extend('opts', OptionsExt)
+        self.extend('reqs', RequestsExt)
