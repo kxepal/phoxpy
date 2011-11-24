@@ -9,8 +9,9 @@
 
 from phoxpy import exceptions
 from phoxpy import xml
-from phoxpy.xmlcodec import PhoxDecoder, PhoxEncoder
-from phoxpy.mapping import MetaMapping, Mapping, AttributeField
+from phoxpy.xmlcodec import PhoxDecoder
+from phoxpy.mapping import MetaMapping, Mapping, AttributeField, \
+                           PhoxMappingEncoder
 
 __all__ = ['Message', 'PhoxRequest', 'PhoxResponse']
 
@@ -132,7 +133,7 @@ class PhoxMessageDecoder(PhoxDecoder):
         return cls(**data)
 
 
-class PhoxMessageEncoder(PhoxEncoder):
+class PhoxMessageEncoder(PhoxMappingEncoder):
     """Encoder for LIS specific messages to XML data."""
 
     def __init__(self, *args, **kwargs):
