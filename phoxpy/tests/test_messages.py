@@ -75,6 +75,14 @@ class PhoxRequestTestCase(unittest.TestCase):
         self.assertEqual(req.type, 'foo')
         self.assertEqual(req['bar'], 'baz')
 
+    def test_to_python_new_request_format(self):
+        stream = xml.parse(StringIO('''<phox-request type="foo">
+        <content><o><f n="bar" t="S" v="baz" /></o></content>
+        </phox-request>'''))
+        req = messages.PhoxRequest.to_python(stream)
+        self.assertEqual(req.type, 'foo')
+        self.assertEqual(req['bar'], 'baz')
+
     def test_to_xml(self):
         msg = messages.PhoxRequest(type='foo', sessionid='bar',
                                    version='baz', buildnumber='zoo')
@@ -148,6 +156,18 @@ class PhoxResponseTestCase(unittest.TestCase):
         msg = messages.PhoxResponse.to_python(stream)
         self.assertEqual(sorted(['foo', 'bar', 'baz']), sorted(msg['fbb']))
 
+    def test_to_python_with_named_o_tag(self):
+        stream = xml.parse(StringIO("<?xml version='1.0' encoding='utf-8'?>\n"
+            '<!DOCTYPE phox-response SYSTEM "phox.dtd">\n'
+            '<phox-response>'
+            '<content><o n=""><s n="fbb">'
+            '<f n="foo" v="foo" t="S"/>'
+            '<f n="bar" v="bar" t="S"/>'
+            '<f n="baz" v="baz" t="S"/>'
+            '</s></o></content>'
+            '</phox-response>'))
+        msg = messages.PhoxResponse.to_python(stream)
+        self.assertEqual(sorted(['foo', 'bar', 'baz']), sorted(msg['fbb']))
 
 if __name__ == '__main__':
     unittest.main()
