@@ -27,7 +27,10 @@ class RequestsExt(ServerExtension):
 
     @request_type(requests.RequestInfo)
     def handle_request_info(self, request):
-        return PhoxResponse(**self.db.get(request['request'], {}))
+        return PhoxResponse(
+            sessionid=request.sessionid,
+            buildnumber=request.buildnumber,
+            **self.db.get(request['request'], {}))
 
     @request_type(journal.RegistrationJournalRequest)
     def handle_registration_journal(self, request):

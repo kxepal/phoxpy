@@ -27,7 +27,10 @@ def load(session, idx):
     """
     msg = RequestInfo(request=idx)
     resp = session.request(body=msg)
-    return resp.unwrap()
+    data = resp.unwrap()
+    data.pop('sessionid', None)
+    data.pop('buildnumber', None)
+    return data
 
 def select(session, filter=None, **options):
     """Selects requests from registration journal.
