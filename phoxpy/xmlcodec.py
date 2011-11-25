@@ -167,6 +167,7 @@ class PhoxDecoder(Decoder):
             if event == 'end':
                 assert elem is endelem
                 break
+        data.sort()
         return data
 
     def decode_object_field(self, stream, endelem):

@@ -55,6 +55,11 @@ class XMLDecodeTestCase(unittest.TestCase):
         self.assertTrue(isinstance(value, list))
         self.assertEqual(value, [1, 2, 3])
 
+    def test_decoded_sequence_always_sorted(self):
+        value = xml.decode('<s><f t="I" v="3"/><f t="S" v="2"/><f t="I" v="4"/></s>')
+        self.assertTrue(isinstance(value, list))
+        self.assertEqual(value, [3, 4, '2'])
+
     def test_decode_empty_sequence(self):
         value = xml.decode('<s/>')
         self.assertTrue(isinstance(value, list))
