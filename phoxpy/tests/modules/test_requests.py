@@ -32,6 +32,11 @@ class RequestsTestCase(unittest.TestCase):
         req = requests.load(self.session, 'foo')
         self.assertEqual(req['data'], 1)
 
+    def test_load_shares_no_header_info(self):
+        req = requests.load(self.session, 'foo')
+        self.assertTrue('sessionid' not in req)
+        self.assertTrue('buildnumber' not in req)
+
     def test_select_all(self):
         items = requests.select(self.session)
         self.assertEqual(
