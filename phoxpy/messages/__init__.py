@@ -111,12 +111,13 @@ class PhoxMessageDecoder(PhoxDecoder):
         raise exceptions.get_error_class(int(code))(descr.encode('utf-8'))
 
     def decode_content(self, stream, endelem):
-        # TODO: refactor this condition.
-        if len(endelem) == 1 and endelem[0].tag == 'o' and not endelem[0].attrib:
-            event, endelem = stream.next()
-            result = self.decode_object_field(stream, endelem)
-            stream.next() # fire `o` tag closing event
-            return result
+        if len(endelem) == 1:
+            child = endelem[0]
+            if child.tag == 'o' and not (child.attrib and child.attrib['n']):
+                event, endelem = stream.next()
+                result = self.decode_object_field(stream, endelem)
+                stream.next() # fire `o` tag closing event
+                return result
         return self.decode_object_field(stream, endelem)
 
     def decode_phox_request(self, stream, endelem):
