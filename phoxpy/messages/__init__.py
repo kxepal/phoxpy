@@ -121,6 +121,12 @@ class PhoxMessageDecoder(PhoxDecoder):
             ('phox-event', ()): self.decode_phox_event,
         })
 
+    def _decode_phox_message(self, cls, stream, endelem):
+        headers = dict(endelem.attrib.items())
+        data = self.decode(stream)
+        data.update(headers)
+        return cls(**data)
+
     def decode_error(self, stream, endelem):
         event, elem = stream.next()
         assert event == 'end' and elem is endelem
@@ -139,25 +145,13 @@ class PhoxMessageDecoder(PhoxDecoder):
         return self.decode_object_field(stream, endelem)
 
     def decode_phox_request(self, stream, endelem):
-        cls = PhoxRequest
-        headers = dict(endelem.attrib.items())
-        data = self.decode(stream)
-        data.update(headers)
-        return cls(**data)
+        return self._decode_phox_message(PhoxRequest, stream ,endelem)
 
     def decode_phox_response(self, stream, endelem):
-        cls = PhoxResponse
-        headers = dict(endelem.attrib.items())
-        data = self.decode(stream)
-        data.update(headers)
-        return cls(**data)
+        return self._decode_phox_message(PhoxResponse, stream ,endelem)
 
     def decode_phox_event(self, stream, endelem):
-        cls = PhoxEvent
-        headers = dict(endelem.attrib.items())
-        data = self.decode(stream)
-        data.update(headers)
-        return cls(**data)
+        return self._decode_phox_message(PhoxEvent, stream ,endelem)
 
 
 class PhoxMessageEncoder(PhoxMappingEncoder):
@@ -171,6 +165,18 @@ class PhoxMessageEncoder(PhoxMappingEncoder):
             PhoxResponse: self.encode_phox_response,
             PhoxEvent: self.encode_phox_event,
         })
+
+    def _encode_phox_message(self, name, value):
+        elem = self.encode(value._asdict())
+        root = xml.Element(name)
+
+        root.attrib.update(elem.attrib.items())
+        elem.attrib.clear()
+
+        content = xml.Element('content')
+        content.append(elem)
+        root.append(content)
+        return root
 
     def encode_message(self, name, value):
         content = self.encode(value._asdict())
@@ -189,30 +195,10 @@ class PhoxMessageEncoder(PhoxMappingEncoder):
         return root
 
     def encode_phox_request_new(self, name, value):
-        root = self.encode_phox_response(value)
-        root.tag = 'phox-request'
-        return root
+        return self._encode_phox_message('phox-request', value)
 
     def encode_phox_response(self, name, value):
-        elem = self.encode(value._asdict())
-        root = xml.Element('phox-response')
-
-        root.attrib.update(elem.attrib.items())
-        elem.attrib.clear()
-
-        content = xml.Element('content')
-        content.append(elem)
-        root.append(content)
-        return root
+        return self._encode_phox_message('phox-response', value)
 
     def encode_phox_event(self, name, value):
-        elem = self.encode(value._asdict())
-        root = xml.Element('phox-event')
-
-        root.attrib.update(elem.attrib.items())
-        elem.attrib.clear()
-
-        content = xml.Element('content')
-        content.append(elem)
-        root.append(content)
-        return root
+        return self._encode_phox_message('phox-event', value)
