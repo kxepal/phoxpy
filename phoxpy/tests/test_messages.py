@@ -169,5 +169,29 @@ class PhoxResponseTestCase(unittest.TestCase):
         msg = messages.PhoxResponse.to_python(stream)
         self.assertEqual(sorted(['foo', 'bar', 'baz']), sorted(msg['fbb']))
 
+
+class PhoxEventTestCase(unittest.TestCase):
+
+    def test_to_xml(self):
+        msg = messages.PhoxEvent(system='foo',  type='baz')
+        data = msg.to_xml()
+        self.assertEqual(data.tag, 'phox-event')
+
+        self.assertTrue('system' in data.attrib)
+        self.assertEqual(data.attrib['system'], 'foo')
+
+        self.assertTrue('type' in data.attrib)
+        self.assertEqual(data.attrib['type'], 'baz')
+
+    def test_stringify(self):
+        self.assertEqual(
+            str(messages.PhoxEvent(type='foo', ids=[])).replace(' />', '/>'),
+            "<?xml version='1.0' encoding='%s'?>\n"
+            '<!DOCTYPE phox-event SYSTEM "phox.dtd">\n'
+            '<phox-event type="foo">'
+            '<content><o><s n="ids"/></o></content>'
+            '</phox-event>' % xml.ENCODING
+        )
+
 if __name__ == '__main__':
     unittest.main()
