@@ -91,6 +91,23 @@ class PhoxResponse(Message):
         return xml.dump(self.to_xml(), doctype=doctype)
 
 
+class PhoxEvent(Message):
+    """Base phox event message."""
+
+    #: Event source.
+    system = AttributeField()
+    #: Event type.
+    type = AttributeField()
+
+    def __init__(self, **kwargs):
+        super(PhoxEvent, self).__init__(**kwargs)
+        assert self.type is not None
+
+    def __str__(self):
+        doctype = ('phox-event', 'SYSTEM', 'phox.dtd')
+        return xml.dump(self.to_xml(), doctype=doctype)
+
+
 class PhoxMessageDecoder(PhoxDecoder):
     """Decoder for LIS specific messages."""
 
@@ -101,6 +118,7 @@ class PhoxMessageDecoder(PhoxDecoder):
             ('error', ()): self.decode_error,
             ('phox-request', ()): self.decode_phox_request,
             ('phox-response', ()): self.decode_phox_response,
+            ('phox-event', ()): self.decode_phox_event,
         })
 
     def decode_error(self, stream, endelem):
@@ -134,6 +152,13 @@ class PhoxMessageDecoder(PhoxDecoder):
         data.update(headers)
         return cls(**data)
 
+    def decode_phox_event(self, stream, endelem):
+        cls = PhoxEvent
+        headers = dict(endelem.attrib.items())
+        data = self.decode(stream)
+        data.update(headers)
+        return cls(**data)
+
 
 class PhoxMessageEncoder(PhoxMappingEncoder):
     """Encoder for LIS specific messages to XML data."""
@@ -144,6 +169,7 @@ class PhoxMessageEncoder(PhoxMappingEncoder):
             Message: self.encode_message,
             PhoxRequest: self.encode_phox_request,
             PhoxResponse: self.encode_phox_response,
+            PhoxEvent: self.encode_phox_event,
         })
 
     def encode_message(self, name, value):
@@ -170,6 +196,18 @@ class PhoxMessageEncoder(PhoxMappingEncoder):
     def encode_phox_response(self, name, value):
         elem = self.encode(value._asdict())
         root = xml.Element('phox-response')
+
+        root.attrib.update(elem.attrib.items())
+        elem.attrib.clear()
+
+        content = xml.Element('content')
+        content.append(elem)
+        root.append(content)
+        return root
+
+    def encode_phox_event(self, name, value):
+        elem = self.encode(value._asdict())
+        root = xml.Element('phox-event')
 
         root.attrib.update(elem.attrib.items())
         elem.attrib.clear()
