@@ -504,7 +504,9 @@ class ObjectField(Field):
             return self.mapping(**dict(value.items()))
 
     def _set_value(self, value):
-        if isinstance(value, dict) or isinstance(value, self.mapping):
+        if isinstance(value, dict):
+            return self.mapping(**value)
+        elif isinstance(value, self.mapping):
             return value
         else:
             raise TypeError('%s' % value)

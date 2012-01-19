@@ -48,7 +48,7 @@ class AttributeFieldTestCase(unittest.TestCase):
 
 
 class BooleanTestCase(unittest.TestCase):
-    
+
     def setUp(self):
         class Dummy(mapping.Mapping):
             field = mapping.BooleanField()
@@ -65,7 +65,7 @@ class BooleanTestCase(unittest.TestCase):
 
 
 class IntegerTestCase(unittest.TestCase):
-    
+
     def setUp(self):
         class Dummy(mapping.Mapping):
             field = mapping.IntegerField()
@@ -708,6 +708,7 @@ class MappingTestCase(unittest.TestCase):
         obj.foo.bar = 'baz'
         obj.to_xml()
 
+
 class ObjectFieldTestCase(unittest.TestCase):
 
     def test_fail_set_invalid_value(self):
@@ -726,6 +727,34 @@ class ObjectFieldTestCase(unittest.TestCase):
         obj.foo.bar = 'baz'
         self.assertEqual(obj.foo.bar, 'baz')
         self.assertEqual(obj['foo']['bar'], 'baz')
+
+    def test_item_assigment(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.ObjectField(mapping.Mapping.build(
+                bar=mapping.IntegerField()
+            ))
+        obj = Dummy()
+        obj.foo.bar = 42
+        self.assertEqual(obj['foo']['bar'], 42)
+        obj['foo']['bar'] = 24
+        self.assertEqual(obj['foo']['bar'], 24)
+
+    def test_dynamic_item_assigment(self):
+        class Dummy(mapping.Mapping):
+            foo = mapping.ObjectField(mapping.Mapping.build())
+        obj = Dummy()
+        obj.foo['bar'] = 42
+        self.assertEqual(obj['foo']['bar'], 42)
+        obj['foo']['bar'] = 24
+        self.assertEqual(obj['foo']['bar'], 24)
+
+    def test_dynamic_object_item_assigment(self):
+        class Dummy(mapping.Mapping):
+            pass
+        obj = Dummy(foo={})
+        obj['foo']['bar'] = 42
+        self.assertTrue('bar' in obj['foo'])
+        self.assertEqual(obj['foo']['bar'], 42)
 
 
 if __name__ == '__main__':
