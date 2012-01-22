@@ -14,6 +14,10 @@ from phoxpy import xmlcodec
 
 class XMLDecodeTestCase(unittest.TestCase):
 
+    def test_decode_untyped(self):
+        value = xml.decode('<f v="42" />')
+        self.assertEqual(value, '42')
+
     def test_decode_boolean_false(self):
         value = xml.decode('<f t="B" v="false" />')
         self.assertEqual(value, False)

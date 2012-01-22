@@ -43,6 +43,8 @@ class PhoxDecoder(Decoder):
     +-------------------------------------+----------------------------+-------+
     | XML Tag                             | Python type                | Notes |
     +=====================================+============================+=======+
+    | tag: f; no attribs; no childs       | :class:`unicode`           |       |
+    +-------------------------------------+----------------------------+-------+
     | tag: f; attribs: t="B"; no childs   | :class:`bool`              | \(1)  |
     +-------------------------------------+----------------------------+-------+
     | tag: f; attribs: t="I"; no childs   | :class:`int`               |       |
@@ -78,6 +80,7 @@ class PhoxDecoder(Decoder):
     """
     def __init__(self, default=None, handlers=None):
         self.handlers = {
+            ('f', ()): self.decode_text_field,
             ('f', (('t', 'B'),)): self.decode_boolean_field,
             ('f', (('t', 'I'),)): self.decode_integer_field,
             ('f', (('t', 'L'),)): self.decode_long_field,
@@ -96,7 +99,24 @@ class PhoxDecoder(Decoder):
             self.handlers.update(handlers)
 
     def get_handler(self, elem):
-        maybe_right_handler = None
+        maybe_right_handlers = []
+        for tagname, attrs in self.handlers:
+            if elem.tag != tagname:
+                continue
+            for key, value in attrs:
+                if key not in elem.attrib:
+                    break
+                if elem.attrib[key] != value:
+                    break
+            else:
+                key = (tagname, attrs)
+                value = self.handlers[key]
+                maybe_right_handlers.append((key, value))
+        if not maybe_right_handlers:
+            return self.decode_default
+        maybe_right_handlers.sort()
+        return maybe_right_handlers[-1][1]
+
         for tagname, attrs in self.handlers:
             if elem.tag != tagname:
                 continue
