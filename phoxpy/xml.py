@@ -12,8 +12,9 @@ import sys
 from StringIO import StringIO
 from phoxpy import xmlcodec
 
-__all__ = ['ENCODING','ElementType', 'ElementTreeType',
-           'Element', 'ElementTree', 'use', 'dump', 'load', 'parse',
+__all__ = ['ENCODING', 'DEFAULT_DECODER', 'DEFAULT_ENCODER',
+           'Element', 'ElementTree', 'ElementType', 'ElementTreeType',
+           'use', 'dump', 'load', 'parse',
            'decode', 'encode']
 
 _using = None
@@ -23,8 +24,10 @@ _ElementTree = None
 _load = None
 _dump = None
 _parse = None
-_default_decoder = xmlcodec.PhoxDecoder()
-_default_encoder = xmlcodec.PhoxEncoder(lambda *a, **k: Element(*a, **k))
+#: Default XML decoder :class:`~phoxpy.xmlcodec.PhoxDecoder`.
+DEFAULT_DECODER = xmlcodec.PhoxDecoder()
+#: Default XML encoder :class:`~phoxpy.xmlcodec.PhoxEncoder`.
+DEFAULT_ENCODER = xmlcodec.PhoxEncoder(lambda *a, **k: Element(*a, **k))
 #: Type of :class:`~phoxpy.xml.Element` realization.
 ElementType = None
 #: Type of :class:`~phoxpy.xml.ElementTree` realization.
@@ -85,7 +88,7 @@ def decode(xmlsrc, cls=None, handlers=None):
         stream = parse(xmlsrc)
     else:
         stream = xmlsrc
-    decoder = _default_decoder
+    decoder = DEFAULT_DECODER
     if cls is not None or handlers is not None:
         kwargs = {}
         if handlers is not None:
@@ -109,7 +112,7 @@ def encode(data, cls=None, handlers=None):
 
     :return: :class:`~phoxpy.xml.Element` instance.
     """
-    encoder = _default_encoder
+    encoder = DEFAULT_ENCODER
     if cls is not None or handlers is not None:
         kwargs = {}
         if handlers is not None:
