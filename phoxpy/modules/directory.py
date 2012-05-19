@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+import time
 from phoxpy.mapping import Mapping
 from phoxpy.messages.directory import \
     DirectoryLoad, DirectorySave, DirectorySaveNew, \
@@ -161,7 +162,7 @@ def restore(session, name, ids):
     session.request(body=message)
     return True
 
-def changes(session, init_versions=None):
+def changes(session, init_versions=None, timeout=10):
     """Setups infinity changes feed in all or specified directories.
 
     :param session: Active session instance.
@@ -170,6 +171,10 @@ def changes(session, init_versions=None):
     :param init_versions: Initial mapping of directory names to their versions.
                           If omitted, all directories will be listening.
     :type init_versions: dict
+
+    :param timeout: Timeout between directory-version requests.
+                    Default is 10 sec.
+    :type timeout: int
 
     :yields: 2-element tuple with directory name and his new version.
     """
@@ -183,3 +188,4 @@ def changes(session, init_versions=None):
             if name in versions and versions[name] < version:
                 yield name, version
                 versions[name] = version
+        time.sleep(timeout)
