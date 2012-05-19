@@ -26,6 +26,14 @@ class SessionTestCase(unittest.TestCase):
         session.open('localhost', http_session=MockHttpSession(self.server))
         self.assertTrue(session.is_active())
 
+    def test_secure_login(self):
+        self.server.ext_auth.add_user('Foo', 'Bar', secure=True)
+        session = client.Session(login='Foo', password='Bar',
+                                 client_id='foo-bar-baz', secure=True)
+        self.assertFalse(session.is_active())
+        session.open('localhost', http_session=MockHttpSession(self.server))
+        self.assertTrue(session.is_active())
+
     def test_logout(self):
         session = client.Session(login='John', password='Doe',
                                  client_id='foo-bar-baz')
