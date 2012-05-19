@@ -14,7 +14,8 @@ __all__ = ['load']
 def load(session):
     """Loads global config options.
     
-    :param session: Active :ref:`~phoxpy.client.Session` instance.
+    :param session: Active session instance.
+    :type session: :class:`~phoxpy.client.Session`
     
     :return: Config options as is.
     :rtype: dict
