@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+import hashlib
 import inspect
 from phoxpy import http
 from phoxpy import xml
@@ -14,6 +15,8 @@ from phoxpy.messages import Message, PhoxRequest, PhoxResponse
 from phoxpy.messages import auth
 
 __all__ = ['PhoxResource', 'Session']
+
+md5 = lambda s: hashlib.md5(s).hexdigest()
 
 class PhoxResource(http.Resource):
     """Specific resource for LIS server with native xml support."""
@@ -77,10 +80,20 @@ class Session(object):
     :param client_id: License string heavy binded to computer hardware.
     :type client_id: str
 
+    :param secure: Activate "secure auth" mode. This should work for modern
+                   LIS server (since 38776), but wouldn't with old ones.
+                   However, you should know, that "secure auth" is not much more
+                   than sending password not as is, but as his md5 hash.
+                   This means that Bob still able to capture your traffic and
+                   hack your account simply by passing password hash.
+    :type secure: bool
+
     :param data: Custom keyword options.
                  See :class:`~phoxpy.messages.AuthRequest` for more information.
     """
-    def __init__(self, login, password, client_id, **data):
+    def __init__(self, login, password, client_id, secure=False, **data):
+        if secure:
+            password = md5(password)
         self._reqmsg = auth.AuthRequest(
             login=login,
             password=password,

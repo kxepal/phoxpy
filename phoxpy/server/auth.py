@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+import hashlib
 from random import randint
 from phoxpy import exceptions
 from phoxpy.messages import PhoxRequest, PhoxResponse
@@ -14,6 +15,8 @@ from phoxpy.messages import auth
 from phoxpy.server.main import ServerExtension, request_type
 
 __all__ = ['AuthExt']
+
+md5 = lambda s: hashlib.md5(s).hexdigest()
 
 class AuthExt(ServerExtension):
 
@@ -31,7 +34,9 @@ class AuthExt(ServerExtension):
     def add_license(self, key):
         self.db['licenses'].add(key)
 
-    def add_user(self, login, password):
+    def add_user(self, login, password, secure=False):
+        if secure:
+            password = md5(password)
         self.db['users'][login] = password
 
     @request_type(auth.AuthRequest)
