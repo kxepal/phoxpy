@@ -7,6 +7,7 @@
 # you should have received as part of this distribution.
 #
 
+import time
 from phoxpy.messages.requests import RequestInfo
 from phoxpy.messages.journal import RegistrationJournalFilter, \
                                     RegistrationJournalRequest
@@ -56,7 +57,7 @@ def select(session, filter=None, **options):
     for row in resp['Request']:
         yield row.unwrap()
 
-def changes(session,  timestamp=0):
+def changes(session,  timestamp=0, timeout=10):
     """Generates changes in registration journal since specified timestamp.
 
     :param session: Active session instance.
@@ -65,6 +66,10 @@ def changes(session,  timestamp=0):
     :param timestamp: Prepared requests filter.
     :type timestamp: int
 
+    :param timeout: Timeout between directory-version requests.
+                    Default is 10 sec.
+    :type timeout: int
+
     :yields: Registration journal rows as dict.
     """
     while True:
@@ -72,3 +77,4 @@ def changes(session,  timestamp=0):
             if timestamp < item['timestamp']:
                 timestamp = item['timestamp']
             yield item
+        time.sleep(timeout)
