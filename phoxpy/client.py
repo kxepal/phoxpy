@@ -101,7 +101,7 @@ class Session(object):
 
         :return: self
         """
-        self.resource = PhoxResource(url, session=http_session)
+        self._resource = PhoxResource(url, session=http_session)
         self._resmsg = self.request(body=self._reqmsg, wrapper=auth.AuthResponse)
         return self
 
@@ -139,7 +139,7 @@ class Session(object):
         if inspect.isclass(wrapper) and issubclass(wrapper, Message):
             wrapper = wrapper.to_python
         return wrapper(
-            self.resource.post_xml(path, body, headers, **params)[2]
+            self._resource.post_xml(path, body, headers, **params)[2]
         )
 
     def sign(self, message):
