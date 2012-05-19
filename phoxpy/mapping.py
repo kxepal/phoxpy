@@ -523,15 +523,20 @@ DateTimeField.register(datetime.datetime, datetime.date)
 ListField.register(tuple, list, set, frozenset)
 ObjectField.register(dict, Mapping)
 
+fields_by_pytype = dict([
+    (pytype, fieldcls)
+    for fieldcls in Field.__subclasses__()
+    for pytype in fieldcls._pytypes
+])
 
 def guess_fieldcls_by_value(value):
     tval = type(value)
     maybe_right_field = None
+    if tval in fields_by_pytype:
+        return fields_by_pytype[tval]
     for fieldcls in Field.__subclasses__():
         for pytype in fieldcls._pytypes:
-            if tval is pytype:
-                return fieldcls
-            elif isinstance(value, pytype):
+            if isinstance(value, pytype):
                 maybe_right_field = fieldcls
     if maybe_right_field is not None:
         return maybe_right_field
