@@ -8,7 +8,7 @@
 #
 
 import time
-from phoxpy.messages.requests import RequestInfo
+from phoxpy.messages.requests import RequestInfo, RequestSamples
 from phoxpy.messages.journal import RegistrationJournalFilter, \
                                     RegistrationJournalRequest
 
@@ -56,6 +56,23 @@ def select(session, filter=None, **options):
     resp = session.request(body=msg)
     for row in resp['Request']:
         yield row.unwrap()
+
+def samples(session, idx):
+    """Retrieves short information about request samples.
+
+    :param session: Active session instance.
+    :type session: :class:`~phoxpy.client.Session`
+
+    :param idx: Request id.
+    :type idx: str
+
+    :yields: Information about samples.
+    :rtype: dict
+    """
+    msg = RequestSamples(request=idx)
+    resp = session.request(body=msg)
+    for sample in resp['samples']:
+        yield sample.unwrap()
 
 def changes(session,  timestamp=0, timeout=10):
     """Generates changes in registration journal since specified timestamp.
