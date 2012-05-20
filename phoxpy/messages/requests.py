@@ -15,3 +15,8 @@ __all__ = ['RequestInfo', 'RequestSamples']
 class RequestInfo(PhoxRequest, 'request-info'):
     """Message for request type ``request-info``."""
     request = RefField()
+
+
+class RequestSamples(PhoxRequest, 'request-samples'):
+    """Message for request type ``request-samples``."""
+    request = RefField()
