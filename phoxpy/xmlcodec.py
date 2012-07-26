@@ -117,20 +117,6 @@ class PhoxDecoder(Decoder):
         maybe_right_handlers.sort()
         return maybe_right_handlers[-1][1]
 
-        for tagname, attrs in self.handlers:
-            if elem.tag != tagname:
-                continue
-            for key, value in attrs:
-                if key not in elem.attrib:
-                    break
-                if elem.attrib[key] != value:
-                    break
-            else:
-                maybe_right_handler = self.handlers[(tagname, attrs)]
-        if maybe_right_handler is None:
-            return self.decode_default
-        return maybe_right_handler
-
     def decode(self, stream):
         """Decodes elements xml stream, produced by :func:`phoxpy.xml.parse`
         to Python object."""
