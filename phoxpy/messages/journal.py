@@ -31,7 +31,7 @@ class RegistrationJournalFilter(Mapping):
     empty_pay_category = BooleanField(name='emptyPayCategory', default=False)
     first_name = TextField(name='firstName')
     hospitals = ListField(RefField())
-    internal_nrs = ListField(RefField(), name='internalNrs')
+    nr = TextField()
     last_name = TextField(name='lastName')
     last_timestamp = LongField(name='lastTimestamp', default=0)
     mark_plan_deviation = BooleanField(name='markPlanDeviation', default=False)
