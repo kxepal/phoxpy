@@ -7,5 +7,5 @@
 # you should have received as part of this distribution.
 #
 from client import Session
-from modules import directory, requests, samples
+from modules import directory, requests
 from exceptions import LisBaseException
