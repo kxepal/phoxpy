@@ -108,12 +108,6 @@ class XMLDecodeTestCase(unittest.TestCase):
         self.assertTrue(isinstance(value['id'], xmlcodec.Attribute))
         self.assertEqual(value['id'], 'test')
 
-    def test_decode_object_with_attributes(self):
-        value = xml.decode('<o id="test"><f n="foo" t="S" v="bar"/></o>')
-        self.assertTrue('id' in value)
-        self.assertTrue(isinstance(value['id'], xmlcodec.Attribute))
-        self.assertEqual(value['id'], 'test')
-
     def test_fail_decode_unnamed_object_item(self):
         self.assertRaises(ValueError, xml.decode, '<o><s/></o>')
 
@@ -129,7 +123,11 @@ class XMLDecodeTestCase(unittest.TestCase):
 class XMLEncodeTestCase(unittest.TestCase):
 
     def test_encode_none(self):
-        self.assertRaises(TypeError, xml.encode, None)
+        elem = xml.encode(None)
+        self.assertTrue(isinstance(elem, xml.ElementType))
+        self.assertEqual(elem.tag, 'f')
+        self.assertTrue('t' not in elem.attrib)
+        self.assertTrue('v' not in elem.attrib)
 
     def test_encode_false(self):
         elem = xml.encode(False)
