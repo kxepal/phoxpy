@@ -128,35 +128,9 @@ class XMLTestsMixIn(object):
             event, elem = item
             tagname = elem.tag
             self.assertEqual(expected_output[idx], (event, tagname))
-        
-
-class CElementTreeTestCase(unittest.TestCase, XMLTestsMixIn):
-
-    def setUp(self):
-        xml.use('cElementTree')
-
-
-class ElementTreeTestCase(unittest.TestCase, XMLTestsMixIn):
-
-    def setUp(self):
-        xml.use('elementtree.ElementTree')
-
-class StdlibCElementTreeTestCase(unittest.TestCase, XMLTestsMixIn):
-
-    def setUp(self):
-        xml.use('xml.etree.cElementTree')
-
-
-class StdlibElementTreeTestCase(unittest.TestCase, XMLTestsMixIn):
-
-    def setUp(self):
-        xml.use('xml.etree.ElementTree')
 
 
 class LxmlTestCase(unittest.TestCase, XMLTestsMixIn):
-
-    def setUp(self):
-        xml.use('lxml.etree')
 
     def test_dump_element(self):
         elem = xml.Element('foo', bar='baz')
