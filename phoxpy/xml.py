@@ -31,18 +31,18 @@ ElementTreeType = type(xml.ElementTree(xml.Element('x')))
 ENCODING = 'Windows-1251' # there is 2011 year, but we still have to use
                           # something not like utf-8
 
-_FIELDS = {}
-_FIELDS_BY_TYPE = {}
-_FIELDS_BY_PYTYPE = {}
+_TAGS = {}
+_TAGS_BY_TYPE = {}
+_TAGS_BY_PYTYPE = {}
 
-def register_field(field, *pytypes):
-    field = field()
-    if field.tagname not in _FIELDS:
-        _FIELDS[field.tagname] = field
-    if field.typeattr is not None:
-        _FIELDS_BY_TYPE[field.typeattr] = field
+def register_tag(tag, *pytypes):
+    tag = tag()
+    if tag.tagname not in _TAGS:
+        _TAGS[tag.tagname] = tag
+    if tag.typeattr is not None:
+        _TAGS_BY_TYPE[tag.typeattr] = tag
     for pytype in pytypes:
-        _FIELDS_BY_PYTYPE[pytype] = field
+        _TAGS_BY_PYTYPE[pytype] = tag
 
 def decode(xmlsrc):
     """Decodes xml source to Python object.
@@ -101,10 +101,10 @@ def decode_stream(stream):
         yield decode_elem(stream, elem)
 
 def decode_elem(stream, elem):
-    if 't' in elem.attrib and elem.attrib['t'] in _FIELDS_BY_TYPE:
-        value = _FIELDS_BY_TYPE[elem.attrib['t']].decode(decode_elem, stream, elem)
-    elif elem.tag in _FIELDS:
-        value = _FIELDS[elem.tag].decode(decode_elem, stream, elem)
+    if 't' in elem.attrib and elem.attrib['t'] in _TAGS_BY_TYPE:
+        value = _TAGS_BY_TYPE[elem.attrib['t']].decode(decode_elem, stream, elem)
+    elif elem.tag in _TAGS:
+        value = _TAGS[elem.tag].decode(decode_elem, stream, elem)
     else:
         raise ValueError('unknown elem %r' % elem)
     elem.clear()
@@ -171,16 +171,16 @@ def encode_elem(name, obj, **attrs):
             return sorted(rates)[-1]
     tobj = type(obj)
     if obj is None:
-        func = _FIELDS['f'].encode
-    elif tobj in _FIELDS_BY_TYPE:
-        func = _FIELDS_BY_TYPE[tobj].encode
+        func = _TAGS['f'].encode
+    elif tobj in _TAGS_BY_TYPE:
+        func = _TAGS_BY_TYPE[tobj].encode
     elif isinstance(obj, dict):
-        func = _FIELDS['o'].encode
+        func = _TAGS['o'].encode
     elif hasattr(obj, '__iter__'):
-        func = _FIELDS['s'].encode
+        func = _TAGS['s'].encode
     else:
         maybe_right_handlers = []
-        for pytype, handler in _FIELDS_BY_PYTYPE.items():
+        for pytype, handler in _TAGS_BY_PYTYPE.items():
             if isinstance(obj, pytype):
                 rate = get_type_rating(pytype, tobj)
                 if rate is not None:

@@ -47,22 +47,20 @@ class Tag(object):
         elem.attrib.update(attrs)
         return elem
 
-class Field(Tag):
+
+class FieldTag(Tag):
 
     __slots__ = ()
     tagname = 'f'
 
-    def encode(self, encode, name, value, **attrs):
-        return super(Field, self).encode(encode, name, value, **attrs)
 
-
-class BooleanField(Field):
+class BooleanTag(FieldTag):
 
     __slots__ = ()
     typeattr = 'B'
 
     def decode(self, decode, stream, prevelem):
-        value = super(BooleanField, self).decode(decode, stream, prevelem)
+        value = super(BooleanTag, self).decode(decode, stream, prevelem)
         if value == 'true':
             return True
         elif value == 'false':
@@ -72,59 +70,59 @@ class BooleanField(Field):
 
     def encode(self,encode, name, value, **attrs):
         value = 'true' if value else 'false'
-        return super(BooleanField, self).encode(encode, name, value, **attrs)
+        return super(BooleanTag, self).encode(encode, name, value, **attrs)
 
 
-class IntegerField(Field):
+class IntegerTag(FieldTag):
 
     __slots__ = ()
     typeattr = 'I'
 
     def decode(self, decode, stream, prevelem):
-        value = super(IntegerField, self).decode(decode, stream, prevelem)
+        value = super(IntegerTag, self).decode(decode, stream, prevelem)
         return int(value)
 
 
-class LongIntegerField(Field):
+class LongIntegerTag(FieldTag):
 
     __slots__ = ()
     typeattr = 'L'
 
     def decode(self, decode, stream, prevelem):
-        value = super(LongIntegerField, self).decode(decode, stream, prevelem)
+        value = super(LongIntegerTag, self).decode(decode, stream, prevelem)
         return long(value)
 
 
-class FloatField(Field):
+class FloatTag(FieldTag):
 
     __slots__ = ()
     typeattr = 'F'
 
     def decode(self, decode, stream, prevelem):
-        value = super(FloatField, self).decode(decode, stream, prevelem)
+        value = super(FloatTag, self).decode(decode, stream, prevelem)
         return float(value)
 
-class StringField(Field):
+class StringTag(FieldTag):
 
     __slots__ = ()
     typeattr = 'S'
 
 
-class DateTimeField(Field):
+class DateTimeTag(FieldTag):
 
     __slots__ = ()
     typeattr = 'D'
 
     def decode(self, decode, stream, prevelem):
-        value = super(DateTimeField, self).decode(decode, stream, prevelem)
+        value = super(DateTimeTag, self).decode(decode, stream, prevelem)
         return datetime.datetime.strptime(value, '%d.%m.%Y %H:%M:%S')
 
     def encode(self, encode, name, value, **attrs):
         value = value.strftime('%d.%m.%Y %H:%M:%S')
-        return super(DateTimeField, self).encode(encode, name, value, **attrs)
+        return super(DateTimeTag, self).encode(encode, name, value, **attrs)
 
 
-class ReferenceField(Tag):
+class ReferenceTag(Tag):
 
     __slots__ = ()
     tagname = 'r'
@@ -136,10 +134,10 @@ class ReferenceField(Tag):
 
     def encode(self, encode, name=None, value=None, **attrs):
         attrs['i'] = unicode(value)
-        return super(ReferenceField, self).encode(encode, name, **attrs)
+        return super(ReferenceTag, self).encode(encode, name, **attrs)
 
 
-class ListField(Tag):
+class ListTag(Tag):
 
     __slots__ = ()
     tagname = 's'
@@ -155,13 +153,13 @@ class ListField(Tag):
         return data
 
     def encode(self, encode, name=None, value=None, **attrs):
-        elem = super(ListField, self).encode(name, **attrs)
+        elem = super(ListTag, self).encode(name, **attrs)
         for item in value:
             elem.append(encode(None, item))
         return elem
 
 
-class ObjectField(Tag):
+class ObjectTag(Tag):
 
     __slots__ = ()
     tagname = 'o'
@@ -187,7 +185,7 @@ class ObjectField(Tag):
 
 
     def encode(self, encode, name=None, value=None, **attrs):
-        elem = super(ObjectField, self).encode(name, **attrs)
+        elem = super(ObjectTag, self).encode(name, **attrs)
         for key, value in value.items():
             if value is None:
                 continue
@@ -198,14 +196,14 @@ class ObjectField(Tag):
         return elem
 
 
-xml.register_field(Field, type(None))
-xml.register_field(BooleanField, bool)
-xml.register_field(IntegerField, int)
-xml.register_field(LongIntegerField, long)
-xml.register_field(FloatField, float)
-xml.register_field(StringField, str,  unicode)
-xml.register_field(ReferenceField, Reference)
-xml.register_field(DateTimeField, datetime.date, datetime.datetime)
-xml.register_field(ReferenceField, Reference)
-xml.register_field(ListField, tuple, list, set, frozenset)
-xml.register_field(ObjectField, dict)
+xml.register_tag(FieldTag, type(None))
+xml.register_tag(BooleanTag, bool)
+xml.register_tag(IntegerTag, int)
+xml.register_tag(LongIntegerTag, long)
+xml.register_tag(FloatTag, float)
+xml.register_tag(StringTag, str,  unicode)
+xml.register_tag(ReferenceTag, Reference)
+xml.register_tag(DateTimeTag, datetime.date, datetime.datetime)
+xml.register_tag(ReferenceTag, Reference)
+xml.register_tag(ListTag, tuple, list, set, frozenset)
+xml.register_tag(ObjectTag, dict)
