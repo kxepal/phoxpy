@@ -16,25 +16,11 @@ from itertools import islice
 import copy
 import datetime
 from phoxpy import xml
-from phoxpy.xmlcodec import Attribute
-from phoxpy.xmlcodec import Reference
-from phoxpy.xmlcodec import PhoxEncoder
+from phoxpy.xmlcodec import Attribute, Reference, ObjectTag
 
 __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
            'TextField', 'DateTimeField', 'RefField', 'ListField', 'ObjectField',
-           'Mapping', 'PhoxMappingEncoder']
-
-class PhoxMappingEncoder(PhoxEncoder):
-
-    def __init__(self, *args, **kwargs):
-        super(PhoxMappingEncoder, self).__init__(*args, **kwargs)
-        self.handlers.update({
-            Mapping: self.encode_mapping,
-        })
-
-    def encode_mapping(self, name, value):
-        return self.encode_object_field(name, value.unwrap())
-
+           'Mapping', 'MappingTag']
 
 class MetaField(type):
 
@@ -185,7 +171,7 @@ class Mapping(object):
         return field
 
     def to_xml(self):
-        return xml.encode(self.unwrap(), PhoxMappingEncoder)
+        return xml.encode(self)
 
     @classmethod
     def to_python(cls, xmlsrc):
@@ -257,6 +243,14 @@ class Mapping(object):
         """Batch update fields data."""
         for key, value in data.items():
             self[key] = value
+
+
+class MappingTag(ObjectTag):
+
+    def encode(self, encode, name, value, **attrs):
+        return super(MappingTag, self).encode(encode, name, value.unwrap())
+
+xml.register_tag(MappingTag, Mapping)
 
 
 class AttributeField(Field):
