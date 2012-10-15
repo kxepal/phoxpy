@@ -183,8 +183,12 @@ class Mapping(object):
 
     @classmethod
     def wrap(cls, data):
-        assert isinstance(data, dict), repr(data)
-        return cls(**data)
+        if isinstance(data, dict):
+            return cls(**data)
+        elif isinstance(data, Mapping):
+            return cls(**dict(data.items()))
+        else:
+            raise TypeError('%r' % data)
 
     def unwrap(self):
         return self._data

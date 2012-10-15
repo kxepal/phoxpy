@@ -708,6 +708,30 @@ class MappingTestCase(unittest.TestCase):
         obj.foo.bar = 'baz'
         obj.to_xml()
 
+    def test_wrap_dict(self):
+        class Dummy(mapping.Mapping):
+            boo = mapping.IntegerField()
+        obj = Dummy.wrap({'boo': 42, 'foo': 'ehlo'})
+        self.assertEqual(obj.boo, 42)
+        self.assertEqual(obj['foo'], 'ehlo')
+
+    def test_wrap_mapping(self):
+        class Dummy(mapping.Mapping):
+            boo = mapping.IntegerField()
+        class Funny(mapping.Mapping):
+            foo = mapping.TextField()
+        obj = Dummy.wrap({'boo': 42, 'foo': 'ehlo'})
+        obj2 = Funny.wrap(obj)
+        self.assertEqual(obj2['boo'], 42)
+        self.assertEqual(obj2.foo, 'ehlo')
+
+    def test_wrap_fail(self):
+        class Dummy(mapping.Mapping):
+            boo = mapping.IntegerField()
+        self.assertRaises(TypeError, Dummy.wrap, 42)
+        self.assertRaises(TypeError, Dummy.wrap, None)
+        self.assertRaises(TypeError, Dummy.wrap, [])
+
 
 class ObjectFieldTestCase(unittest.TestCase):
 
