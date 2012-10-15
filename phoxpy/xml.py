@@ -176,7 +176,7 @@ def encode_elem(name, obj, **attrs):
         func = _TAGS_BY_TYPE[tobj].encode
     elif isinstance(obj, dict):
         func = _TAGS['o'].encode
-    elif hasattr(obj, '__iter__'):
+    elif isinstance(obj, (tuple, list, set, frozenset)): # TODO: check for __iter__
         func = _TAGS['s'].encode
     else:
         maybe_right_handlers = []
