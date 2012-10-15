@@ -91,6 +91,8 @@ def decode(xmlsrc):
         stream = parse(StringIO(xmlsrc))
     elif hasattr(xmlsrc, 'read'):
         stream = parse(xmlsrc)
+    elif isinstance(xmlsrc, ElementType):
+        stream = parse(StringIO(_dump(xmlsrc)))
     else:
         stream = xmlsrc
     for obj in decode_stream(stream):
