@@ -9,6 +9,7 @@
 """XML decoder/encoder for phox.dtd schema."""
 
 import datetime
+from phoxpy import exceptions
 from phoxpy import xml
 
 __all__ = ['Attribute', 'Reference', 'Decoder', 'Encoder',
@@ -26,6 +27,7 @@ class Reference(unicode):
 
 # resolve import recursion
 from phoxpy.mapping import Mapping
+from phoxpy.messages import Content, PhoxEvent, PhoxRequest, PhoxResponse
 
 
 class Tag(object):
@@ -207,7 +209,7 @@ class ContentTag(ObjectTag):
     def decode(self, decode, stream, prevelem):
         if len(prevelem) == 1:
             child = prevelem[0]
-            if child.tag == 'o' and not (child.attrib and child.attrib['n']):
+            if child.tag == 'o':
                 event, endelem = stream.next()
                 result = super(ContentTag, self).decode(decode, stream, endelem)
                 stream.next() # fire `o` tag closing event
@@ -224,6 +226,62 @@ class ContentTag(ObjectTag):
         return container
 
 
+class PhoxMessageTag(ObjectTag):
+
+    __slots__ = ()
+    wrapper = None
+
+    def decode(self, decode, stream, prevelem):
+        header = dict((key, Attribute(value)) for key, value in prevelem.attrib.items())
+
+        data = xml.decode(stream)
+        instance = self.wrapper(**header)
+
+        instance.content = data
+        return instance
+
+    def encode(self, encode, name=None, value=None, **attrs):
+        root = super(PhoxMessageTag, self).encode(encode, name, value, **attrs)
+        if len(root):
+            del root[0].attrib['n'] # strip content name
+        return root
+
+
+class PhoxRequestTag(PhoxMessageTag):
+
+    __slots__ = ()
+    tagname = 'phox-request'
+    wrapper = PhoxRequest
+
+
+class PhoxResponseTag(PhoxMessageTag):
+
+    __slots__ = ()
+    tagname = 'phox-response'
+    wrapper = PhoxResponse
+
+
+class PhoxEventTag(PhoxMessageTag):
+
+    __slots__ = ()
+    tagname = 'phox-event'
+    wrapper = PhoxEvent
+
+
+class PhoxErrorTag(PhoxMessageTag):
+
+    __slots__ = ()
+    containtertag = 'phox-error'
+
+    def decode(self, decode, stream, prevelem):
+        event, elem = stream.next()
+        assert event == 'end' and elem is prevelem
+        code = elem.attrib['code']
+        descr = elem.attrib.get('description', '')
+        raise exceptions.get_error_class(int(code))(descr.encode('utf-8'))
+
+
+
 xml.register_tag(FieldTag, type(None))
 xml.register_tag(BooleanTag, bool)
 xml.register_tag(IntegerTag, int)
@@ -234,4 +292,9 @@ xml.register_tag(ReferenceTag, Reference)
 xml.register_tag(DateTimeTag, datetime.date, datetime.datetime)
 xml.register_tag(ReferenceTag, Reference)
 xml.register_tag(ListTag, tuple, list, set, frozenset)
-xml.register_tag(ObjectTag, dict, Mapping)
+xml.register_tag(ObjectTag, dict)
+xml.register_tag(ContentTag, Content, Mapping)
+xml.register_tag(PhoxRequestTag, PhoxRequest)
+xml.register_tag(PhoxResponseTag, PhoxResponse)
+xml.register_tag(PhoxEventTag, PhoxEvent)
+xml.register_tag(PhoxErrorTag, Exception)
