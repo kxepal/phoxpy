@@ -488,5 +488,7 @@ class ObjectField(Field):
             return self.mapping(**value)
         elif isinstance(value, self.mapping):
             return value
+        elif isinstance(value, Mapping):
+            return self.mapping.wrap(value)
         else:
             raise TypeError('%s' % value)
