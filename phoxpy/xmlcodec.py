@@ -153,7 +153,7 @@ class ListTag(Tag):
         return data
 
     def encode(self, encode, name=None, value=None, **attrs):
-        elem = super(ListTag, self).encode(name, **attrs)
+        elem = super(ListTag, self).encode(encode, name, **attrs)
         for item in value:
             elem.append(encode(None, item))
         return elem
@@ -183,9 +183,8 @@ class ObjectTag(Tag):
                 break
         return data
 
-
     def encode(self, encode, name=None, value=None, **attrs):
-        elem = super(ObjectTag, self).encode(name, **attrs)
+        elem = super(ObjectTag, self).encode(encode, name, **attrs)
         for key, value in value.items():
             if value is None:
                 continue
