@@ -16,7 +16,7 @@ from itertools import islice
 import copy
 import datetime
 from phoxpy import xml
-from phoxpy.xmlcodec import Attribute, Reference, ObjectTag
+from phoxpy.xmlcodec import Attribute, Reference
 
 __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
            'TextField', 'DateTimeField', 'RefField', 'ListField', 'ObjectField',
@@ -237,14 +237,6 @@ class Mapping(object):
         """Batch update fields data."""
         for key, value in data.items():
             self[key] = value
-
-
-class MappingTag(ObjectTag):
-
-    def encode(self, encode, name, value, **attrs):
-        return xml.encode_elem(name, value.unwrap())
-
-xml.register_tag(MappingTag, Mapping)
 
 
 class AttributeField(Field):
