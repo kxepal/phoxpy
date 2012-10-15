@@ -688,7 +688,7 @@ class MappingTestCase(unittest.TestCase):
         obj['foo'] = [1, 2, 42]
         self.assertEqual(obj['foo'][2], 42)
         del obj['foo']
-        self.assertEqual(obj['foo'], [])
+        self.assertTrue('foo' not in obj)
 
     def test_convert_to_dict(self):
         class Dummy(mapping.Mapping):
@@ -737,7 +737,7 @@ class ObjectFieldTestCase(unittest.TestCase):
         obj.foo.bar = 42
         self.assertEqual(obj['foo']['bar'], 42)
         obj['foo']['bar'] = 24
-        self.assertEqual(obj['foo']['bar'], 24)
+        self.assertEqual(obj.foo.bar, 24)
 
     def test_dynamic_item_assigment(self):
         class Dummy(mapping.Mapping):
