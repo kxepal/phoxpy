@@ -64,14 +64,14 @@ class PhoxRequestTestCase(unittest.TestCase):
         root = xml.Element('phox-request')
         root.attrib['type'] = 'foo'
         root.append(xml.Element('content'))
-        req = messages.PhoxRequest.to_python(root)
+        req = xml.decode(root)
         self.assertEqual(req.type, 'foo')
 
     def test_to_python_stream(self):
         stream = xml.parse(StringIO('''<phox-request type="foo">
         <content><f n="bar" t="S" v="baz" /></content>
         </phox-request>'''))
-        req = messages.PhoxRequest.to_python(stream)
+        req = xml.decode(stream)
         self.assertEqual(req.type, 'foo')
         self.assertEqual(req['bar'], 'baz')
 
@@ -79,7 +79,7 @@ class PhoxRequestTestCase(unittest.TestCase):
         stream = xml.parse(StringIO('''<phox-request type="foo">
         <content><o><f n="bar" t="S" v="baz" /></o></content>
         </phox-request>'''))
-        req = messages.PhoxRequest.to_python(stream)
+        req = xml.decode(stream)
         self.assertEqual(req.type, 'foo')
         self.assertEqual(req['bar'], 'baz')
 
@@ -147,13 +147,13 @@ class PhoxResponseTestCase(unittest.TestCase):
         stream = xml.parse(StringIO("<?xml version='1.0' encoding='utf-8'?>\n"
             '<!DOCTYPE phox-response SYSTEM "phox.dtd">\n'
             '<phox-response>'
-            '<content><o><s n="fbb">'
+            '<content><o n=""><s n="fbb">'
             '<f n="foo" v="foo" t="S"/>'
             '<f n="bar" v="bar" t="S"/>'
             '<f n="baz" v="baz" t="S"/>'
             '</s></o></content>'
             '</phox-response>'))
-        msg = messages.PhoxResponse.to_python(stream)
+        msg = xml.decode(stream)
         self.assertEqual(sorted(['foo', 'bar', 'baz']), sorted(msg['fbb']))
 
     def test_to_python_with_named_o_tag(self):
@@ -166,7 +166,8 @@ class PhoxResponseTestCase(unittest.TestCase):
             '<f n="baz" v="baz" t="S"/>'
             '</s></o></content>'
             '</phox-response>'))
-        msg = messages.PhoxResponse.to_python(stream)
+        msg = xml.decode(stream)
+        print msg
         self.assertEqual(sorted(['foo', 'bar', 'baz']), sorted(msg['fbb']))
 
 
