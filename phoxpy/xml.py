@@ -215,14 +215,6 @@ def parse(fileobj):
     """
     for event, elem in _parse(fileobj, ('start', 'end')):
         yield event, elem
-        if event == 'end':
-            # clean up to reduce memory footprint
-            # http://www.ibm.com/developerworks/xml/library/x-hiperfparse/#listing4
-            elem.clear()
-            if not hasattr(elem, 'getprevious'):
-                continue
-            while elem.getprevious() is not None:
-                del elem.getparent()[0]
 
 def dump(xmlsrc, doctype=None, encoding=None):
     """Dump module with very limited support of doctype setting
