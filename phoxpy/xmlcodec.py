@@ -24,6 +24,10 @@ class Reference(unicode):
     back to XML without losing information about their kind."""
 
 
+# resolve import recursion
+from phoxpy.mapping import Mapping
+
+
 class Tag(object):
 
     __slots__ = ()
@@ -195,6 +199,31 @@ class ObjectTag(Tag):
         return elem
 
 
+class ContentTag(ObjectTag):
+
+    __slots__ = ()
+    tagname = 'content'
+
+    def decode(self, decode, stream, prevelem):
+        if len(prevelem) == 1:
+            child = prevelem[0]
+            if child.tag == 'o' and not (child.attrib and child.attrib['n']):
+                event, endelem = stream.next()
+                result = super(ContentTag, self).decode(decode, stream, endelem)
+                stream.next() # fire `o` tag closing event
+                return result
+        return super(ContentTag, self).decode(decode, stream, prevelem)
+
+    def encode(self, encode, name, value, **attrs):
+        elem = xml.encode_elem(name, value.unwrap(), **attrs)
+        container = xml.Element('content')
+        if len(elem):
+            container.append(elem)
+        container.attrib.update(dict(elem.attrib.items()))
+        elem.attrib.clear()
+        return container
+
+
 xml.register_tag(FieldTag, type(None))
 xml.register_tag(BooleanTag, bool)
 xml.register_tag(IntegerTag, int)
@@ -205,4 +234,4 @@ xml.register_tag(ReferenceTag, Reference)
 xml.register_tag(DateTimeTag, datetime.date, datetime.datetime)
 xml.register_tag(ReferenceTag, Reference)
 xml.register_tag(ListTag, tuple, list, set, frozenset)
-xml.register_tag(ObjectTag, dict)
+xml.register_tag(ObjectTag, dict, Mapping)
