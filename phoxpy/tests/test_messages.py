@@ -139,7 +139,7 @@ class PhoxResponseTestCase(unittest.TestCase):
             "<?xml version='1.0' encoding='%s'?>\n"
             '<!DOCTYPE phox-response SYSTEM "phox.dtd">\n'
             '<phox-response>'
-            '<content><o/></content>'
+            '<content/>'
             '</phox-response>' % xml.ENCODING
         )
 
