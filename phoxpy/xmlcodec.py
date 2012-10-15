@@ -232,7 +232,8 @@ class PhoxMessageTag(ObjectTag):
     wrapper = None
 
     def decode(self, decode, stream, prevelem):
-        header = dict((key, Attribute(value)) for key, value in prevelem.attrib.items())
+        header = dict(map(lambda i: (i[0], Attribute(i[1])),
+                          prevelem.attrib.items()))
 
         data = xml.decode(stream)
         instance = self.wrapper(**header)
@@ -252,6 +253,18 @@ class PhoxRequestTag(PhoxMessageTag):
     __slots__ = ()
     tagname = 'phox-request'
     wrapper = PhoxRequest
+
+    def encode(self, encode, name=None, value=None, **attrs):
+        root = super(PhoxRequestTag, self).encode(encode, name, value, **attrs)
+        if len(root):
+            content = root[0]
+            if len(content):
+                root.remove(content)
+                obj = content[0]
+                obj.tag = 'content'
+                del content
+                root.append(obj)
+        return root
 
 
 class PhoxResponseTag(PhoxMessageTag):
