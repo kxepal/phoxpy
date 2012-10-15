@@ -103,11 +103,11 @@ class PhoxRequestTestCase(unittest.TestCase):
 
     def test_stringify(self):
         self.assertEqual(
-            str(messages.PhoxRequest(type='foo')).replace(' />', '/>'),
+            str(messages.PhoxRequest(type='foo', bar='baz')).replace(' />', '/>'),
             "<?xml version='1.0' encoding='%s'?>\n"
             '<!DOCTYPE phox-request SYSTEM "phox.dtd">\n'
             '<phox-request type="foo">'
-            '<content/>'
+            '<content><f n="bar" v="baz" t="S"/></content>'
             '</phox-request>' % xml.ENCODING
         )
 
