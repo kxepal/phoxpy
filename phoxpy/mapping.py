@@ -25,11 +25,7 @@ __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
 class MetaField(type):
 
     def __init__(cls, *args, **kwargs):
-        cls._pytypes = tuple()
         super(MetaField, cls).__init__(*args, **kwargs)
-
-    def register(self, *pytypes):
-        self._pytypes = pytypes
 
 
 class Field(object):
@@ -111,20 +107,22 @@ class Mapping(object):
     def __getitem__(self, key):
         attrname, field = self._get_field(key)
         if field is None:
-            raise KeyError(key)
+            return self._data[key]
         return field.__get__(self, None)
 
     def __setitem__(self, key, value):
         attrname, field = self._get_field(key)
         if field is None:
-            field = self._set_field(key, value)
-        field.__set__(self, value)
+            self._data[key] = value
+        else:
+            field.__set__(self, value)
 
     def __delitem__(self, key):
         attrname, field = self._get_field(key)
         if field is None:
-            raise KeyError(key)
-        field.__set__(self, field.default)
+            del self._data[key]
+        else:
+            field.__set__(self, field.default)
 
     def __lt__(self, other):
         return self._asdict() < other
@@ -164,18 +162,12 @@ class Mapping(object):
                 return name, field
         return key, None
 
-    def _set_field(self, name, value):
-        field = gen_field_by_value(name, value)
-        self._fields[name] = field
-        self._data[name] = value
-        return field
-
     def to_xml(self):
         return xml.encode(self)
 
     @classmethod
     def to_python(cls, xmlsrc):
-        return cls.wrap(xml.decode(xmlsrc))
+        return xml.decode(xmlsrc)
 
     @classmethod
     def build(cls, **d):
@@ -191,10 +183,8 @@ class Mapping(object):
 
     @classmethod
     def wrap(cls, data):
-        if isinstance(data, dict):
-            return cls(**data)
-        else:
-            return cls.to_python(data)
+        assert isinstance(data, dict), repr(data)
+        return cls(**data)
 
     def unwrap(self):
         return self._data
@@ -248,7 +238,7 @@ class Mapping(object):
 class MappingTag(ObjectTag):
 
     def encode(self, encode, name, value, **attrs):
-        return super(MappingTag, self).encode(encode, name, value.unwrap())
+        return xml.encode_elem(name, value.unwrap())
 
 xml.register_tag(MappingTag, Mapping)
 
@@ -504,48 +494,3 @@ class ObjectField(Field):
             return value
         else:
             raise TypeError('%s' % value)
-
-
-AttributeField.register(Attribute)
-BooleanField.register(bool)
-IntegerField.register(int)
-LongField.register(long)
-FloatField.register(float)
-TextField.register(str, unicode)
-RefField.register(Reference)
-DateTimeField.register(datetime.datetime, datetime.date)
-ListField.register(tuple, list, set, frozenset)
-ObjectField.register(dict, Mapping)
-
-fields_by_pytype = dict([
-    (pytype, fieldcls)
-    for fieldcls in Field.__subclasses__()
-    for pytype in fieldcls._pytypes
-])
-
-def guess_fieldcls_by_value(value):
-    tval = type(value)
-    maybe_right_field = None
-    if tval in fields_by_pytype:
-        return fields_by_pytype[tval]
-    for fieldcls in Field.__subclasses__():
-        for pytype in fieldcls._pytypes:
-            if isinstance(value, pytype):
-                maybe_right_field = fieldcls
-    if maybe_right_field is not None:
-        return maybe_right_field
-    raise ValueError('Could not guess field for value %r' % value)
-
-def gen_field_by_value(name, value):
-    fieldcls = guess_fieldcls_by_value(value)
-    if fieldcls is ListField:
-        if value:
-            itemfield = gen_field_by_value(None, value[0])
-        else:
-            itemfield = TextField()
-        field = fieldcls(itemfield, name=name)
-    elif fieldcls is ObjectField:
-        field = fieldcls(Mapping.build(), name=name)
-    else:
-        field = fieldcls(name=name)
-    return field
