@@ -55,7 +55,7 @@ def select(session, filter=None, **options):
     msg = RegistrationJournalRequest(filter=filter)
     resp = session.request(body=msg)
     for row in resp['Request']:
-        yield row.unwrap()
+        yield row
 
 def samples(session, idx):
     """Retrieves short information about request samples.
@@ -72,7 +72,7 @@ def samples(session, idx):
     msg = RequestSamples(request=idx)
     resp = session.request(body=msg)
     for sample in resp['samples']:
-        yield sample.unwrap()
+        yield sample
 
 def changes(session,  timestamp=0, timeout=10):
     """Generates changes in registration journal since specified timestamp.

@@ -37,8 +37,8 @@ class RequestsExt(ServerExtension):
         data = []
         for item in self.db.values():
             emit = True
-            if request.filter.last_timestamp:
-                if request.filter.last_timestamp > item['timestamp']:
+            if request['lastTimestamp']:
+                if request['lastTimestamp'] > item['timestamp']:
                     emit = False
             if emit:
                 data.append(item)

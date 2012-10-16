@@ -10,7 +10,7 @@
 from phoxpy.mapping import BooleanField, DateTimeField, IntegerField, \
                            ListField, LongField, Mapping, ObjectField, \
                            RefField, TextField
-from phoxpy.messages import PhoxRequest
+from phoxpy.messages import Message, PhoxRequest
 
 
 class RegistrationJournalFilter(Mapping):
@@ -55,4 +55,5 @@ class RegistrationJournalFilter(Mapping):
 
 
 class RegistrationJournalRequest(PhoxRequest, 'registration-journal'):
-    filter = ObjectField(RegistrationJournalFilter)
+    class Content(Message.Content):
+        filter = ObjectField(RegistrationJournalFilter)
