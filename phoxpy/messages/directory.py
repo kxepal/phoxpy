@@ -7,7 +7,7 @@
 # you should have received as part of this distribution.
 #
 
-from phoxpy.messages import PhoxRequest
+from phoxpy.messages import Message, PhoxRequest
 from phoxpy.mapping import Mapping, ObjectField, ListField, \
                            RefField, TextField, AttributeField
 
@@ -17,18 +17,20 @@ __all__ = ['DirectoryLoad', 'DirectorySave', 'DirectorySaveNew',
 
 class DirectoryLoad(PhoxRequest, 'directory'):
     """Message for request type ``directory``."""
-    #: Directory data source name.
-    name = TextField()
-    #: List of object ids. If None all of them will be requests.
-    elements = ListField(RefField())
+    class Content(Message.Content):
+        #: Directory data source name.
+        name = TextField()
+        #: List of object ids. If None all of them will be requests.
+        elements = ListField(RefField())
 
 
 class DirectorySave(PhoxRequest, 'directory-save'):
     """Message for request type ``directory-save``."""
-    #: Directory data source name.
-    directory = TextField()
-    #: Directory element to save.
-    element = ObjectField(Mapping.build(id=AttributeField()))
+    class Content(Message.Content):
+        #: Directory data source name.
+        directory = TextField()
+        #: Directory element to save.
+        element = ObjectField(Mapping.build(id=AttributeField()))
 
 
 class DirectorySaveNew(DirectorySave,'directory-save-new'):
@@ -39,10 +41,11 @@ class DirectorySaveNew(DirectorySave,'directory-save-new'):
 
 class DirectoryRemove(PhoxRequest, 'directory-remove'):
     """Message for request type ``directory-remove``."""
-    #: Directory data source name.
-    directory = TextField()
-    #: List of object ids to remove.
-    ids = ListField(RefField())
+    class Content(Message.Content):
+        #: Directory data source name.
+        directory = TextField()
+        #: List of object ids to remove.
+        ids = ListField(RefField())
 
 
 class DirectoryRemoveNew(DirectoryRemove, 'directory-remove-new'):
@@ -53,10 +56,11 @@ class DirectoryRemoveNew(DirectoryRemove, 'directory-remove-new'):
 
 class DirectoryRestore(PhoxRequest, 'directory-restore'):
     """Message for request type ``directory-restore``."""
-    #: Directory data source name.
-    directory = TextField()
-    #: List of object ids to restore.
-    ids = ListField(RefField())
+    class Content(Message.Content):
+        #: Directory data source name.
+        directory = TextField()
+        #: List of object ids to restore.
+        ids = ListField(RefField())
 
 
 class DirectoryVersions(PhoxRequest, 'directory-versions'):
