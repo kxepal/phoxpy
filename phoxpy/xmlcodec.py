@@ -244,7 +244,7 @@ class PhoxMessageTag(ObjectTag):
     def encode(self, encode, name=None, value=None, **attrs):
         root = super(PhoxMessageTag, self).encode(encode, name, value, **attrs)
         if len(root):
-            del root[0].attrib['n'] # strip content name
+            root[0].attrib.pop('n', None) # strip content name
         return root
 
 
