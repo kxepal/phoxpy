@@ -15,7 +15,7 @@ except ImportError:
 
 setup(
     name = 'phoxpy',
-    version = '0.2-dev',
+    version = '0.2',
     description = 'Python client to Laboratory Information System',
     long_description = \
 """This is a Python library that implements protocol and base operations with
