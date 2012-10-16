@@ -167,7 +167,6 @@ class PhoxResponseTestCase(unittest.TestCase):
             '</s></o></content>'
             '</phox-response>'))
         msg = xml.decode(stream)
-        print msg
         self.assertEqual(sorted(['foo', 'bar', 'baz']), sorted(msg['fbb']))
 
 
