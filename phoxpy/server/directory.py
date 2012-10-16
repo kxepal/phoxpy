@@ -142,7 +142,7 @@ class DirectoryExt(ServerExtension):
         return messages.PhoxResponse(
             sessionid=request.sessionid,
             buildnumber=request.buildnumber,
-            id=idx,
+            id=str(idx),
             version=version
         )
 
