@@ -41,16 +41,16 @@ class AuthExt(ServerExtension):
 
     @request_type(auth.AuthRequest)
     def handle_login(self, request):
-        if request.client_id not in self.db['licenses']:
+        if request['clientId'] not in self.db['licenses']:
             raise exceptions.LicenseNotFound(request.client_id)
 
-        if request.instance_count is None:
+        if request['instanceCount'] is None:
             raise exceptions.LisBaseException(654)
 
-        if request.login not in self.db['users']:
+        if request['login'] not in self.db['users']:
             raise exceptions.UnknownUser()
 
-        if self.db['users'][request.login] != request.password:
+        if self.db['users'][request['login']] != request['password']:
             raise exceptions.AuthentificationError()
 
         sessionid = self.get_session_id()

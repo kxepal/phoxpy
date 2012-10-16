@@ -163,7 +163,6 @@ class Session(object):
         elif message is not None:
             raise TypeError('Invalid message %r' % message)
 
-
     def close(self):
         """Closes current active session."""
         assert self.is_active(), 'Session has not been activated.'
