@@ -8,15 +8,19 @@
 #
 
 from phoxpy.mapping import RefField
-from phoxpy.messages import PhoxRequest
+from phoxpy.messages import Message, PhoxRequest
 
 __all__ = ['RequestInfo', 'RequestSamples']
 
 class RequestInfo(PhoxRequest, 'request-info'):
     """Message for request type ``request-info``."""
-    request = RefField()
+    class Content(Message.Content):
+        request = RefField()
 
 
 class RequestSamples(PhoxRequest, 'request-samples'):
     """Message for request type ``request-samples``."""
-    request = RefField()
+    class Content(Message.Content):
+        request = RefField()
+
+
