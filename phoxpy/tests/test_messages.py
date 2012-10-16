@@ -34,7 +34,7 @@ class MessageTestCase(unittest.TestCase):
         class Post(messages.Message):
             ids = mapping.ListField(mapping.RefField())
         root = Post(ids=['1', '2', '3']).to_xml()
-        self.assertEqual(root.tag, 'content')
+        self.assertEqual(root.tag, 'o')
 
 
 class PhoxRequestTestCase(unittest.TestCase):
