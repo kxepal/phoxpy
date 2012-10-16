@@ -13,12 +13,11 @@ from phoxpy.mapping import MetaMapping, Mapping, AttributeField, ObjectField
 __all__ = ['Message', 'PhoxRequest', 'PhoxResponse', 'Content']
 
 
-class Content(Mapping):
-    """Actual message content holder."""
-
-
 class Message(Mapping):
     """Base communication message mapping."""
+
+    class Content(Mapping):
+        """Message content holder mapping."""
 
     #: Unique session id. Sets automatically after successful auth.
     sessionid = AttributeField()
@@ -66,6 +65,7 @@ class MetaPhoxRequest(MetaMapping):
             if key not in cls._fields:
                 content[key] = data.pop(key)
         data['content'] = content
+        cls._fields['content'] = cls.content = ObjectField(cls.Content)
         return super(MetaPhoxRequest, cls).__call__(*args, **data)
 
 

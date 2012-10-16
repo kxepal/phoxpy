@@ -27,7 +27,7 @@ class Reference(unicode):
 
 # resolve import recursion
 from phoxpy.mapping import Mapping
-from phoxpy.messages import Content, PhoxEvent, PhoxRequest, PhoxResponse
+from phoxpy.messages import Message, PhoxEvent, PhoxRequest, PhoxResponse
 
 
 class Tag(object):
@@ -306,7 +306,7 @@ xml.register_tag(DateTimeTag, datetime.date, datetime.datetime)
 xml.register_tag(ReferenceTag, Reference)
 xml.register_tag(ListTag, tuple, list, set, frozenset)
 xml.register_tag(ObjectTag, dict)
-xml.register_tag(ContentTag, Content, Mapping)
+xml.register_tag(ContentTag, Message.Content, Mapping)
 xml.register_tag(PhoxRequestTag, PhoxRequest)
 xml.register_tag(PhoxResponseTag, PhoxResponse)
 xml.register_tag(PhoxEventTag, PhoxEvent)
