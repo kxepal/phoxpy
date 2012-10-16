@@ -117,7 +117,7 @@ class DirectoryExt(ServerExtension):
     def handle_directory(self, request):
         ids = request.get('elements', [])
 
-        dirdb = self.get(request.name)
+        dirdb = self.get(request['name'])
 
         if ids:
             items = [dirdb.get(idx) for idx in ids if idx in dirdb]
@@ -135,8 +135,8 @@ class DirectoryExt(ServerExtension):
         )
 
     def _directory_save(self, request):
-        item = request.element.unwrap()
-        dirdb = self.get(request.directory)
+        item = request['element']
+        dirdb = self.get(request['directory'])
         idx, version = dirdb.set(item)
 
         return messages.PhoxResponse(
@@ -156,9 +156,9 @@ class DirectoryExt(ServerExtension):
 
     @request_type(directory.DirectoryRemove)
     def handle_directory_remove(self, request):
-        dirdb = self.get(request.directory)
+        dirdb = self.get(request['directory'])
         version = dirdb.version
-        for idx in request.ids:
+        for idx in request['ids']:
             _, version = dirdb.update(idx, removed=True)
         # we have to return this one
         root = xml.Element('phox-response', sessionid=request['sessionid'])
@@ -169,7 +169,7 @@ class DirectoryExt(ServerExtension):
 
     @request_type(directory.DirectoryRemoveNew)
     def handle_directory_remove_new(self, request):
-        dirdb = self.get(request.directory)
+        dirdb = self.get(request['directory'])
         version = dirdb.version
         for idx in request['ids']:
             _, version = dirdb.update(idx, removed=True)
@@ -177,7 +177,7 @@ class DirectoryExt(ServerExtension):
 
     @request_type(directory.DirectoryRestore)
     def handle_directory_restore(self, request):
-        dirdb = self.get(request.directory)
+        dirdb = self.get(request['directory'])
         version = dirdb.version
         for idx in request['ids']:
             _, version = dirdb.update(idx, removed=False)

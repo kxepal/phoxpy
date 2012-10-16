@@ -73,7 +73,7 @@ def load(session, name, ids=None, removed=False):
     for item in resp[name]:
         if not removed and item.get('removed', False):
             continue
-        yield item.unwrap()
+        yield item
 
 def store(session, name, item):
     """Stores directory object on server.
