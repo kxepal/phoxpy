@@ -149,14 +149,12 @@ class ListTag(Tag):
     tagname = 's'
 
     def decode(self, decode, stream, prevelem):
-        data = []
         for event, elem in stream:
             if event == 'start':
-                data.append(decode(stream, elem))
+                yield decode(stream, elem)
             if event == 'end':
                 assert elem is prevelem
                 break
-        return data
 
     def encode(self, encode, name=None, value=None, **attrs):
         elem = super(ListTag, self).encode(encode, name, **attrs)
