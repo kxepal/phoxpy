@@ -11,6 +11,7 @@
 import datetime
 from phoxpy import exceptions
 from phoxpy import xml
+from types import GeneratorType
 
 __all__ = ['Attribute', 'Reference', 'Decoder', 'Encoder',
            'PhoxDecoder', 'PhoxEncoder']
@@ -176,7 +177,10 @@ class ObjectTag(Tag):
                     raise ValueError('Unnamed element %s: attribute `n`'
                                      ' expected (%s)' % (elem, elem.attrib))
                 key = elem.attrib['n']
-                data[key] = decode(stream, elem)
+                value = decode(stream, elem)
+                if isinstance(value, GeneratorType):
+                    value = list(value)
+                data[key] = value
             if event == 'end':
                 assert elem is prevelem, (elem, prevelem)
                 for key, value in elem.attrib.items():
