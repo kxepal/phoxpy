@@ -100,6 +100,9 @@ class PhoxResponse(Message):
         doctype = ('phox-response', 'SYSTEM', 'phox.dtd')
         return xml.dump(self.to_xml(), doctype=doctype)
 
+    def unwrap(self):
+        return super(PhoxResponse, self).unwrap()[None].unwrap()
+
 
 class PhoxEvent(Message):
     """Base phox event message."""
