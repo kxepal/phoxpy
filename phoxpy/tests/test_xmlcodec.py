@@ -9,6 +9,7 @@
 
 import datetime
 import unittest
+from types import GeneratorType
 from phoxpy import xml
 from phoxpy import xmlcodec
 
@@ -56,8 +57,8 @@ class XMLDecodeTestCase(unittest.TestCase):
 
     def test_decode_sequence(self):
         value = xml.decode('<s><f t="I" v="1"/><f t="I" v="2"/><f t="I" v="3"/></s>')
-        self.assertTrue(isinstance(value, list))
-        self.assertEqual(value, [1, 2, 3])
+        self.assertTrue(isinstance(value, GeneratorType))
+        self.assertEqual(list(value), [1, 2, 3])
 
 #    def test_decoded_sequence_always_sorted(self):
 #        value = xml.decode('<s><f t="I" v="3"/><f t="S" v="2"/><f t="I" v="4"/></s>')
@@ -66,8 +67,8 @@ class XMLDecodeTestCase(unittest.TestCase):
 
     def test_decode_empty_sequence(self):
         value = xml.decode('<s/>')
-        self.assertTrue(isinstance(value, list))
-        self.assertEqual(value, [])
+        self.assertTrue(isinstance(value, GeneratorType))
+        self.assertEqual(list(value), [])
 
     def test_decode_object(self):
         value = xml.decode('<o><f n="foo" t="I" v="42"/><f n="bar" t="S" v="baz"/></o>')
@@ -90,7 +91,8 @@ class XMLDecodeTestCase(unittest.TestCase):
             </s>
         </o></s>
         ''')
-        self.assertEqual(value, [
+        self.assertTrue(isinstance(value, GeneratorType))
+        self.assertEqual(list(value), [
             {},
             {'foo': [xmlcodec.Reference('foo'),
                      xmlcodec.Reference('bar'),
