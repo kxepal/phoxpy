@@ -101,6 +101,11 @@ def decode(xmlsrc):
 def decode_stream(stream):
     for event, elem in stream:
         yield decode_elem(stream, elem)
+        if event == 'end':
+            elem.clear()
+            while elem.getprevious() is not None:
+                del elem.getparent()[0]
+            del elem
 
 def decode_elem(stream, elem):
     if 't' in elem.attrib and elem.attrib['t'] in _TAGS_BY_TYPE:
@@ -109,9 +114,6 @@ def decode_elem(stream, elem):
         value = _TAGS[elem.tag].decode(decode_elem, stream, elem)
     else:
         raise ValueError('unknown elem %r' % elem)
-    elem.clear()
-    while elem.getprevious() is not None:
-        del elem.getparent()[0]
     return value
 
 def encode(obj, **attrs):
