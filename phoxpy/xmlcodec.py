@@ -420,7 +420,7 @@ class PhoxEventCodec(PhoxMessageCodec):
 class PhoxErrorCodec(PhoxMessageCodec):
     """Codec for :class:`~phoxpy.messages.PhoxError` messages."""
     __slots__ = ()
-    containtertag = 'phox-error'
+    tagname = 'phox-error'
 
     def decode(self, decode, stream, curelem):
         event, elem = stream.next()
