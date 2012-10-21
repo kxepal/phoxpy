@@ -38,7 +38,7 @@ _TAGS_BY_PYTYPE = {}
 def register_tag(tag, *pytypes):
     """Registers new XML element codec.
 
-    :param tag: :class:`~phoxpy.xmlcodec.Tag` class or his subclass
+    :param tag: :class:`~phoxpy.xmlcodec.BaseCodec` class or his subclass
     :param pytypes: Python types which will be associated with.
     """
     tag = tag()
@@ -67,7 +67,7 @@ def decode(xmlsrc):
     :param xmlsrc: XML data source.
 
     +-------------------------------------+----------------------------+-------+
-    | XML Tag                             | Python type                | Notes |
+    | XML BaseCodec                             | Python type                | Notes |
     +=====================================+============================+=======+
     | tag: f; no attribs; no childs       | :class:`unicode`           |       |
     +-------------------------------------+----------------------------+-------+
