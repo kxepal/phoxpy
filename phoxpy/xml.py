@@ -35,19 +35,23 @@ _TAGS = {}
 _TAGS_BY_TYPE = {}
 _TAGS_BY_PYTYPE = {}
 
-def register_codec(tag, *pytypes):
+def register_codec(codec, *pytypes):
     """Registers new XML element codec.
 
-    :param tag: :class:`~phoxpy.xmlcodec.BaseCodec` class or his subclass
+    :param codec: :class:`~phoxpy.xmlcodec.BaseCodec` class or his subclass
     :param pytypes: Python types which will be associated with.
     """
-    tag = tag()
-    if tag.tagname not in _TAGS:
-        _TAGS[tag.tagname] = tag
-    if tag.typemarker is not None:
-        _TAGS_BY_TYPE[tag.typemarker] = tag
+    codec = codec()
+    if codec.tagname not in _TAGS:
+        _TAGS[codec.tagname] = codec
+    if codec.typemarker is not None:
+        _TAGS_BY_TYPE[codec.typemarker] = codec
     for pytype in pytypes:
-        _TAGS_BY_PYTYPE[pytype] = tag
+        _TAGS_BY_PYTYPE[pytype] = codec
+
+def register_fallback_codec(codec):
+    """Registers fallback codec."""
+    _TAGS[None] = codec()
 
 def make_stream(xmlsrc):
     """Wraps XML source to generator of events and XML element instances."""
@@ -135,12 +139,12 @@ def decode_elem(stream, elem):
     :raises: :exc:`ValueError` if no decoders available for passed `elem`.
     """
     if 't' in elem.attrib and elem.attrib['t'] in _TAGS_BY_TYPE:
-        value = _TAGS_BY_TYPE[elem.attrib['t']].decode(decode_elem, stream, elem)
+        codec = _TAGS_BY_TYPE[elem.attrib['t']]
     elif elem.tag in _TAGS:
-        value = _TAGS[elem.tag].decode(decode_elem, stream, elem)
+        codec = _TAGS[elem.tag]
     else:
-        raise ValueError('unknown elem %r' % elem)
-    return value
+        codec = _TAGS[None]
+    return codec.decode(decode_elem, stream, elem)
 
 def encode(obj, **attrs):
     """Encodes Python object to XML object.
@@ -213,13 +217,13 @@ def encode_elem(name, obj, **attrs):
             return sorted(rates)[-1]
     tobj = type(obj)
     if obj is None:
-        func = _TAGS['f'].encode
+        codec = _TAGS['f']
     elif tobj in _TAGS_BY_TYPE:
-        func = _TAGS_BY_TYPE[tobj].encode
+        codec = _TAGS_BY_TYPE[tobj]
     elif isinstance(obj, dict):
-        func = _TAGS['o'].encode
+        codec = _TAGS['o']
     elif isinstance(obj, (tuple, list, set, frozenset)): # TODO: check for __iter__
-        func = _TAGS['s'].encode
+        codec = _TAGS['s']
     else:
         maybe_right_handlers = []
         for pytype, handler in _TAGS_BY_PYTYPE.items():
@@ -228,10 +232,11 @@ def encode_elem(name, obj, **attrs):
                 if rate is not None:
                     maybe_right_handlers.append((rate, handler))
         if not maybe_right_handlers:
-            raise TypeError('unknown handler for %r' % obj)
-        maybe_right_handlers.sort()
-        func =  maybe_right_handlers[-1][1].encode
-    return func(encode_elem, name, obj, **attrs)
+            codec = _TAGS[None]
+        else:
+            maybe_right_handlers.sort()
+            codec =  maybe_right_handlers[-1][1]
+    return codec.encode(encode_elem, name, obj, **attrs)
 
 def Element(name, *args, **kwargs):
     """Proxy to ``Element`` factory of used etree module."""

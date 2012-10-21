@@ -15,6 +15,9 @@ from phoxpy import xmlcodec
 
 class XMLDecodeTestCase(unittest.TestCase):
 
+    def test_decode_fallback(self):
+        self.assertRaises(ValueError, xml.decode, '<foooooo/>')
+
     def test_decode_untyped(self):
         value = xml.decode('<f v="42" />')
         self.assertEqual(value, '42')
@@ -123,6 +126,9 @@ class XMLDecodeTestCase(unittest.TestCase):
 
 
 class XMLEncodeTestCase(unittest.TestCase):
+
+    def test_decode_fallback(self):
+        self.assertRaises(ValueError, xml.encode, object())
 
     def test_encode_none(self):
         elem = xml.encode(None)

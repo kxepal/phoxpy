@@ -99,6 +99,29 @@ class BaseCodec(object):
         return elem
 
 
+class FallbackCodec(BaseCodec):
+    """Fallback codec for cases when there is suitable codecs for decodec
+    or encoded object.
+
+    >>> FallbackCodec.to_python('<foo />')  #doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    ValueError: ...
+
+    >>> FallbackCodec.to_xml(object())      #doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    ValueError: ...
+    """
+
+
+    def decode(self, decode, stream, curelem):
+        raise ValueError('unable to decode element %r' % curelem)
+
+    def encode(self, encode, name=None, value=None, **attrs):
+        raise ValueError('unable to encode object %r' % value)
+
+
 class FieldCodec(BaseCodec):
     """Base codec for primitive types that described by `f` named XML tag."""
     __slots__ = ()
@@ -430,7 +453,7 @@ class PhoxErrorCodec(PhoxMessageCodec):
         raise exceptions.get_error_class(int(code))(descr.encode('utf-8'))
 
 
-
+xml.register_fallback_codec(FallbackCodec)
 xml.register_codec(FieldCodec, type(None))
 xml.register_codec(BooleanCodec, bool)
 xml.register_codec(IntegerCodec, int)
