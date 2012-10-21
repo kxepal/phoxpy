@@ -44,8 +44,8 @@ def register_codec(tag, *pytypes):
     tag = tag()
     if tag.tagname not in _TAGS:
         _TAGS[tag.tagname] = tag
-    if tag.typeattr is not None:
-        _TAGS_BY_TYPE[tag.typeattr] = tag
+    if tag.typemarker is not None:
+        _TAGS_BY_TYPE[tag.typemarker] = tag
     for pytype in pytypes:
         _TAGS_BY_PYTYPE[pytype] = tag
 

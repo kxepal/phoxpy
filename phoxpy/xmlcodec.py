@@ -37,7 +37,7 @@ class BaseCodec(object):
     #: XML tag name to handle.
     tagname = None
     #: XML stored value type marker.
-    typeattr = None
+    typemarker = None
 
     @classmethod
     def to_python(cls, xmlsrc):
@@ -93,8 +93,8 @@ class BaseCodec(object):
             elem.attrib['n'] = name
         if value is not None:
             elem.attrib['v'] = unicode(value)
-        if self.typeattr is not None:
-            elem.attrib['t'] = self.typeattr
+        if self.typemarker is not None:
+            elem.attrib['t'] = self.typemarker
         elem.attrib.update(attrs)
         return elem
 
@@ -121,7 +121,7 @@ class BooleanCodec(FieldCodec):
     'false'
     """
     __slots__ = ()
-    typeattr = 'B'
+    typemarker = 'B'
 
     def decode(self, decode, stream, curelem):
         value = super(BooleanCodec, self).decode(decode, stream, curelem)
@@ -151,7 +151,7 @@ class IntegerCodec(FieldCodec):
     '42'
     """
     __slots__ = ()
-    typeattr = 'I'
+    typemarker = 'I'
 
     def decode(self, decode, stream, curelem):
         value = super(IntegerCodec, self).decode(decode, stream, curelem)
@@ -172,7 +172,7 @@ class LongIntegerCodec(FieldCodec):
     '42'
     """
     __slots__ = ()
-    typeattr = 'L'
+    typemarker = 'L'
 
     def decode(self, decode, stream, curelem):
         value = super(LongIntegerCodec, self).decode(decode, stream, curelem)
@@ -193,7 +193,7 @@ class FloatCodec(FieldCodec):
     '3.14'
     """
     __slots__ = ()
-    typeattr = 'F'
+    typemarker = 'F'
 
     def decode(self, decode, stream, curelem):
         value = super(FloatCodec, self).decode(decode, stream, curelem)
@@ -213,7 +213,7 @@ class StringCodec(FieldCodec):
     'foo'
     """
     __slots__ = ()
-    typeattr = 'S'
+    typemarker = 'S'
 
 
 class DateTimeCodec(FieldCodec):
@@ -230,7 +230,7 @@ class DateTimeCodec(FieldCodec):
     '14.02.2009 02:31:30'
     """
     __slots__ = ()
-    typeattr = 'D'
+    typemarker = 'D'
 
     def decode(self, decode, stream, curelem):
         value = super(DateTimeCodec, self).decode(decode, stream, curelem)
