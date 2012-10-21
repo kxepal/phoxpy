@@ -49,6 +49,18 @@ def register_tag(tag, *pytypes):
     for pytype in pytypes:
         _TAGS_BY_PYTYPE[pytype] = tag
 
+def make_stream(xmlsrc):
+    """Wraps XML source to generator of events and XML element instances."""
+    if isinstance(xmlsrc, basestring):
+        stream = parse(StringIO(xmlsrc))
+    elif hasattr(xmlsrc, 'read'):
+        stream = parse(xmlsrc)
+    elif isinstance(xmlsrc, ElementType):
+        stream = parse(StringIO(_dump(xmlsrc)))
+    else:
+        stream = xmlsrc
+    return stream
+
 def decode(xmlsrc):
     """Decodes xml source to Python object.
 
@@ -92,14 +104,7 @@ def decode(xmlsrc):
 
     For ``f`` tags value is searched in ``v`` attribute.
     """
-    if isinstance(xmlsrc, basestring):
-        stream = parse(StringIO(xmlsrc))
-    elif hasattr(xmlsrc, 'read'):
-        stream = parse(xmlsrc)
-    elif isinstance(xmlsrc, ElementType):
-        stream = parse(StringIO(_dump(xmlsrc)))
-    else:
-        stream = xmlsrc
+    stream = make_stream(xmlsrc)
     for obj in decode_stream(stream):
         return obj
 
@@ -114,11 +119,6 @@ def decode_stream(stream):
     """
     for event, elem in stream:
         yield decode_elem(stream, elem)
-        if event == 'end':
-            elem.clear()
-            while elem.getprevious() is not None:
-                del elem.getparent()[0]
-            del elem
 
 def decode_elem(stream, elem):
     """Decodes single XML element by calling his decoding handler.
@@ -257,6 +257,11 @@ def parse(fileobj):
     """
     for event, elem in _parse(fileobj, ('start', 'end')):
         yield event, elem
+        if event == 'end':
+            elem.clear()
+            while elem.getprevious() is not None:
+                del elem.getparent()[0]
+            del elem
 
 def dump(xmlsrc, doctype=None, encoding=None):
     """Dump module with very limited support of doctype setting

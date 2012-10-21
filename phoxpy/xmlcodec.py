@@ -32,18 +32,62 @@ from phoxpy.messages import Message, PhoxEvent, PhoxRequest, PhoxResponse
 
 
 class Tag(object):
-
+    """Base XML element codec."""
     __slots__ = ()
+    #: XML tag name to handle.
     tagname = None
+    #: XML stored value type marker.
     typeattr = None
 
-    def decode(self, decode, stream, prevelem):
+    @classmethod
+    def to_python(cls, xmlsrc):
+        """Shortcut to :meth:`decode`.
+
+        :param xmlsrc: XML data source.
+        :type xmlsrc: str, file-like object or :class:`~phoxpy.xml.Element`
+                      instance.
+
+        :return: Python object depended on decoding logic.
+        """
+        stream = xml.make_stream(xmlsrc)
+        event, elem = stream.next()
+        return cls().decode(xml.decode_elem, stream, elem)
+
+    @classmethod
+    def to_xml(cls, obj, **kwargs):
+        """Shortcut to :meth:`encode`.
+
+        :param obj: Python object.
+
+        :return: :class:`~phoxpy.xml.Element` instance.
+        """
+        kwargs.setdefault('name', None)
+        return cls().encode(xml.encode_elem, value=obj, **kwargs)
+
+    def decode(self, decode, stream, curelem):
+        """Decodes XML element to Python object.
+
+        :param decode: Element decoding handler.
+        :type decode: callable
+
+        :param stream: XML event-element pairs generator.
+        :type stream: generator
+        
+        :param curelem: Current decoded XML element.
+        :type curelem: :class:`~phoxpy.xml.Element`
+
+        :raises: :exc:`AssertionError` if emitted by `stream` event is not
+                 ``"end"`` for same element as `curelem` one.
+
+        :return: `str` or `None` if ``v`` attribute missed.
+        """
         for event, elem in stream:
-            assert elem is prevelem and event == 'end', (event, elem)
+            assert elem is curelem and event == 'end', (event, elem, curelem)
             value = elem.attrib.get('v')
             return value
 
     def encode(self, encode, name=None, value=None, **attrs):
+        """Encodes Python object to XML element."""
         elem = xml.Element(self.tagname)
         if name is not None:
             elem.attrib['n'] = name
@@ -56,18 +100,31 @@ class Tag(object):
 
 
 class FieldTag(Tag):
-
+    """Base codec for primitive types that described by `f` named XML tag."""
     __slots__ = ()
     tagname = 'f'
 
 
 class BooleanTag(FieldTag):
+    """Codec for :class:`bool` type.
 
+    >>> BooleanTag.to_python('<f t="B" v="false" />')
+    False
+    >>> BooleanTag.to_python('<f t="B" v="true" />')
+    True
+    >>> elem = BooleanTag.to_xml(False)
+    >>> elem.tag
+    'f'
+    >>> elem.attrib['t']
+    'B'
+    >>> elem.attrib['v']
+    'false'
+    """
     __slots__ = ()
     typeattr = 'B'
 
-    def decode(self, decode, stream, prevelem):
-        value = super(BooleanTag, self).decode(decode, stream, prevelem)
+    def decode(self, decode, stream, curelem):
+        value = super(BooleanTag, self).decode(decode, stream, curelem)
         if value == 'true':
             return True
         elif value == 'false':
@@ -81,47 +138,102 @@ class BooleanTag(FieldTag):
 
 
 class IntegerTag(FieldTag):
+    """Codec for :class:`int` type.
 
+    >>> IntegerTag.to_python('<f t="I" v="42" />')
+    42
+    >>> elem = IntegerTag.to_xml(42)
+    >>> elem.tag
+    'f'
+    >>> elem.attrib['t']
+    'I'
+    >>> elem.attrib['v']
+    '42'
+    """
     __slots__ = ()
     typeattr = 'I'
 
-    def decode(self, decode, stream, prevelem):
-        value = super(IntegerTag, self).decode(decode, stream, prevelem)
+    def decode(self, decode, stream, curelem):
+        value = super(IntegerTag, self).decode(decode, stream, curelem)
         return int(value)
 
 
 class LongIntegerTag(FieldTag):
+    """Codec for :class:`long` type.
 
+    >>> LongIntegerTag.to_python('<f t="L" v="42" />')
+    42L
+    >>> elem = LongIntegerTag.to_xml(42L)
+    >>> elem.tag
+    'f'
+    >>> elem.attrib['t']
+    'L'
+    >>> elem.attrib['v']
+    '42'
+    """
     __slots__ = ()
     typeattr = 'L'
 
-    def decode(self, decode, stream, prevelem):
-        value = super(LongIntegerTag, self).decode(decode, stream, prevelem)
+    def decode(self, decode, stream, curelem):
+        value = super(LongIntegerTag, self).decode(decode, stream, curelem)
         return long(value)
 
 
 class FloatTag(FieldTag):
+    """Codec for :class:`float` type.
 
+    >>> str(round(FloatTag.to_python('<f t="F" v="3.14" />'), 2))
+    '3.14'
+    >>> elem = FloatTag.to_xml(3.14)
+    >>> elem.tag
+    'f'
+    >>> elem.attrib['t']
+    'F'
+    >>> elem.attrib['v']
+    '3.14'
+    """
     __slots__ = ()
     typeattr = 'F'
 
-    def decode(self, decode, stream, prevelem):
-        value = super(FloatTag, self).decode(decode, stream, prevelem)
+    def decode(self, decode, stream, curelem):
+        value = super(FloatTag, self).decode(decode, stream, curelem)
         return float(value)
 
 class StringTag(FieldTag):
+    """Codec for :class:`str` and :class:`unicode` types.
 
+    >>> StringTag.to_python('<f t="S" v="foo" />')
+    'foo'
+    >>> elem = StringTag.to_xml('foo')
+    >>> elem.tag
+    'f'
+    >>> elem.attrib['t']
+    'S'
+    >>> elem.attrib['v']
+    'foo'
+    """
     __slots__ = ()
     typeattr = 'S'
 
 
 class DateTimeTag(FieldTag):
+    """Codec for :class:`datetime.datetime` type.
 
+    >>> DateTimeTag.to_python('<f t="D" v="14.02.2009 02:31:30" />')
+    datetime.datetime(2009, 2, 14, 2, 31, 30)
+    >>> elem = DateTimeTag.to_xml(datetime.datetime(2009,2,14,2,31,30))
+    >>> elem.tag
+    'f'
+    >>> elem.attrib['t']
+    'D'
+    >>> elem.attrib['v']
+    '14.02.2009 02:31:30'
+    """
     __slots__ = ()
     typeattr = 'D'
 
-    def decode(self, decode, stream, prevelem):
-        value = super(DateTimeTag, self).decode(decode, stream, prevelem)
+    def decode(self, decode, stream, curelem):
+        value = super(DateTimeTag, self).decode(decode, stream, curelem)
         return datetime.datetime.strptime(value, '%d.%m.%Y %H:%M:%S')
 
     def encode(self, encode, name, value, **attrs):
@@ -130,13 +242,22 @@ class DateTimeTag(FieldTag):
 
 
 class ReferenceTag(Tag):
+    """Codec for :class:`~phoxpy.xmlcodec.Reference` type.
 
+    >>> ReferenceTag.to_python('<r i="42"/>')
+    u'42'
+    >>> elem = ReferenceTag.to_xml(Reference('42'))
+    >>> elem.tag
+    'r'
+    >>> elem.attrib['i']
+    '42'
+    """
     __slots__ = ()
     tagname = 'r'
 
-    def decode(self, decode, stream, prevelem):
+    def decode(self, decode, stream, curelem):
         for event, elem in stream:
-            assert elem is prevelem and event == 'end', (event, elem)
+            assert elem is curelem and event == 'end', (event, elem)
             return Reference(elem.attrib['i'])
 
     def encode(self, encode, name=None, value=None, **attrs):
@@ -145,16 +266,29 @@ class ReferenceTag(Tag):
 
 
 class ListTag(Tag):
+    """Codec for items sequence.
 
+    >>> xmlsrc = '<s><f t="I" v="1"/><f t="I" v="2"/><f t="I" v="3"/></s>'
+    >>> obj = ListTag.to_python(xmlsrc)
+    >>> obj     #doctest: +ELLIPSIS
+    <generator object at 0x...>
+    >>> list(obj)
+    [1, 2, 3]
+    >>> elem = ListTag.to_xml([1, 2, 3])
+    >>> elem.tag
+    's'
+    >>> len(elem)
+    3
+    """
     __slots__ = ()
     tagname = 's'
 
-    def decode(self, decode, stream, prevelem):
+    def decode(self, decode, stream, curelem):
         for event, elem in stream:
             if event == 'start':
                 yield decode(stream, elem)
             if event == 'end':
-                assert elem is prevelem
+                assert elem is curelem
                 break
 
     def encode(self, encode, name=None, value=None, **attrs):
@@ -165,11 +299,11 @@ class ListTag(Tag):
 
 
 class ObjectTag(Tag):
-
+    """Codec for key-value mappings."""
     __slots__ = ()
     tagname = 'o'
 
-    def decode(self, decode, stream, prevelem):
+    def decode(self, decode, stream, curelem):
         data = {}
         for event, elem in stream:
             if event == 'start':
@@ -182,7 +316,7 @@ class ObjectTag(Tag):
                     value = list(value)
                 data[key] = value
             if event == 'end':
-                assert elem is prevelem, (elem, prevelem)
+                assert elem is curelem, (elem, curelem)
                 for key, value in elem.attrib.items():
                     if key in ['n', 't', 'v']:
                         continue
@@ -204,19 +338,19 @@ class ObjectTag(Tag):
 
 
 class ContentTag(ObjectTag):
-
+    """Special codec for `content` tag."""
     __slots__ = ()
     tagname = 'content'
 
-    def decode(self, decode, stream, prevelem):
-        if len(prevelem) == 1:
-            child = prevelem[0]
+    def decode(self, decode, stream, curelem):
+        if len(curelem) == 1:
+            child = curelem[0]
             if child.tag == 'o':
                 event, endelem = stream.next()
                 result = super(ContentTag, self).decode(decode, stream, endelem)
                 stream.next() # fire `o` tag closing event
                 return result
-        return super(ContentTag, self).decode(decode, stream, prevelem)
+        return super(ContentTag, self).decode(decode, stream, curelem)
 
     def encode(self, encode, name, value, **attrs):
         elem = xml.encode_elem(name, value.unwrap(), **attrs)
@@ -229,13 +363,13 @@ class ContentTag(ObjectTag):
 
 
 class PhoxMessageTag(ObjectTag):
-
+    """Codec for Phox :class:`~phoxpy.messages.Message` instances."""
     __slots__ = ()
     wrapper = None
 
-    def decode(self, decode, stream, prevelem):
+    def decode(self, decode, stream, curelem):
         header = dict(map(lambda i: (i[0], Attribute(i[1])),
-                          prevelem.attrib.items()))
+                          curelem.attrib.items()))
 
         data = xml.decode(stream)
         instance = self.wrapper(**header)
@@ -251,7 +385,7 @@ class PhoxMessageTag(ObjectTag):
 
 
 class PhoxRequestTag(PhoxMessageTag):
-
+    """Codec for :class:`~phoxpy.messages.PhoxRequest` messages."""
     __slots__ = ()
     tagname = 'phox-request'
     wrapper = PhoxRequest
@@ -270,27 +404,27 @@ class PhoxRequestTag(PhoxMessageTag):
 
 
 class PhoxResponseTag(PhoxMessageTag):
-
+    """Codec for :class:`~phoxpy.messages.PhoxResponse` messages."""
     __slots__ = ()
     tagname = 'phox-response'
     wrapper = PhoxResponse
 
 
 class PhoxEventTag(PhoxMessageTag):
-
+    """Codec for :class:`~phoxpy.messages.PhoxEvent` messages."""
     __slots__ = ()
     tagname = 'phox-event'
     wrapper = PhoxEvent
 
 
 class PhoxErrorTag(PhoxMessageTag):
-
+    """Codec for :class:`~phoxpy.messages.PhoxError` messages."""
     __slots__ = ()
     containtertag = 'phox-error'
 
-    def decode(self, decode, stream, prevelem):
+    def decode(self, decode, stream, curelem):
         event, elem = stream.next()
-        assert event == 'end' and elem is prevelem
+        assert event == 'end' and elem is curelem
         code = elem.attrib['code']
         descr = elem.attrib.get('description', '')
         raise exceptions.get_error_class(int(code))(descr.encode('utf-8'))
