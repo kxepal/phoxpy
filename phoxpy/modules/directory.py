@@ -8,6 +8,7 @@
 #
 
 import time
+from phoxpy.xmlcodec import DirectoryResponseCodec
 from phoxpy.mapping import Mapping
 from phoxpy.messages.directory import \
     DirectoryLoad, DirectorySave, DirectorySaveNew, \
@@ -51,7 +52,7 @@ def items(session):
     for db in resp['versions']:
         yield db['name'], db['version']
 
-def load(session, name, ids=None, removed=False):
+def load(session, name, ids=None, removed=False, _wrapper=DirectoryResponseCodec):
     """Loads data from specified directory.
 
     :param session: Active session instance.
@@ -69,7 +70,8 @@ def load(session, name, ids=None, removed=False):
     :yields: Directory objects as dict.
     """
     ids = maybe_item_or_ids(ids)
-    resp = session.request(body=DirectoryLoad(name=name, elements=ids))
+    resp = session.request(body=DirectoryLoad(name=name, elements=ids),
+                           wrapper=_wrapper)
     for item in resp[name]:
         if not removed and item.get('removed', False):
             continue

@@ -453,6 +453,39 @@ class PhoxErrorCodec(PhoxMessageCodec):
         raise exceptions.get_error_class(int(code))(descr.encode('utf-8'))
 
 
+class DirectoryResponseCodec(PhoxResponseCodec):
+    """Optimized :class:`~phoxpy.xmlcodec.PhoxResponceCodec` for handling
+    loaded directories. General fix is to prevent unfolding generator inside of
+    root object.
+    """
+
+    def decode(self, decode, stream, prevelem):
+        def next_tag_should_be(stream, expected_event, expected_tag):
+            for event, elem in stream:
+                assert event == expected_event, (event, expected_event)
+                assert elem.tag == expected_tag, (elem.tag, expected_tag)
+                return event, elem
+        header = dict(map(lambda i: (i[0], Attribute(i[1])),
+                          prevelem.attrib.items()))
+        data = {}
+
+        next_tag_should_be(stream, 'start', 'content')
+        next_tag_should_be(stream, 'start', 'o')
+
+        event, elem = next_tag_should_be(stream, 'start', 'f')
+        attrs = dict(elem.attrib.items())
+        data[attrs['n']] = decode(stream, elem)
+
+        event, elem = next_tag_should_be(stream, 'start', 's')
+        attrs = dict(elem.attrib.items())
+        data[attrs['n']] = decode(stream, elem)
+
+        instance = self.wrapper(**header)
+
+        instance.content = data
+
+        return instance
+
 xml.register_fallback_codec(FallbackCodec)
 xml.register_codec(FieldCodec, type(None))
 xml.register_codec(BooleanCodec, bool)
