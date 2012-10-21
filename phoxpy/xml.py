@@ -67,7 +67,7 @@ def decode(xmlsrc):
     :param xmlsrc: XML data source.
 
     +-------------------------------------+----------------------------+-------+
-    | XML BaseCodec                             | Python type                | Notes |
+    | XML Tag                             | Python type                | Notes |
     +=====================================+============================+=======+
     | tag: f; no attribs; no childs       | :class:`unicode`           |       |
     +-------------------------------------+----------------------------+-------+
