@@ -35,7 +35,7 @@ _TAGS = {}
 _TAGS_BY_TYPE = {}
 _TAGS_BY_PYTYPE = {}
 
-def register_tag(tag, *pytypes):
+def register_codec(tag, *pytypes):
     """Registers new XML element codec.
 
     :param tag: :class:`~phoxpy.xmlcodec.BaseCodec` class or his subclass
