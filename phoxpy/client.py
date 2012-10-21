@@ -8,11 +8,11 @@
 #
 
 import hashlib
-import inspect
+import phoxpy.xmlcodec # TODO: import recursion WHY?
 from phoxpy import http
 from phoxpy import xml
 from phoxpy.messages import Message, PhoxRequest, PhoxResponse
-from phoxpy.messages import auth
+from phoxpy.messages.auth import AuthRequest, AuthResponse
 
 __all__ = ['PhoxResource', 'Session']
 
@@ -94,13 +94,12 @@ class Session(object):
     def __init__(self, login, password, client_id, secure=False, **data):
         if secure:
             password = md5(password)
-        self._reqmsg = auth.AuthRequest(
-            login=login,
-            password=password,
-            client_id=client_id,
-            **data
-        )
-        self._resmsg = auth.AuthResponse()
+
+        self._credentials = AuthRequest(login=login,
+                                        password=password,
+                                        client_id=client_id,
+                                        **data)
+        self._userctx = AuthResponse()
         self._resource = None
 
     def open(self, url, http_session=None):
@@ -115,7 +114,8 @@ class Session(object):
         :return: self
         """
         self._resource = PhoxResource(url, session=http_session)
-        self._resmsg = self.request(body=self._reqmsg, wrapper=auth.AuthResponse)
+        self._userctx = self.request(body=self._credentials,
+                                     wrapper=AuthResponse)
         return self
 
     def request(self, path='', body=None, headers=None, wrapper=None, **params):
@@ -132,30 +132,27 @@ class Session(object):
         :param headers: HTTP headers dictionary.
         :type headers: dict
 
-        :param wrapper: Callable object or :class:`~phoxpy.messages.Message`
-                        class that will wrap returned xml data as
-                        :class:`~phoxpy.xml.Element` instance.
-                        For :class:`~phoxpy.messages.Message` classes method
-                        :meth:`~phoxpy.mapping.Mapping.wrap` is used.
-        :type wrapper: callable object or :class:`~phoxpy.messages.Message`
-                       class.
+        :param wrapper: Callable object that will wrap XML data into Python
+                        object.
+        :type wrapper: callable
 
         :param params: Custom query parameters as keyword arguments.
 
-
         :return: Response message.
-        :rtype: :class:`~phoxpy.messages.PhoxResponse`
         """
         self.sign(body)
         if wrapper is None:
             wrapper = PhoxResponse
-        if inspect.isclass(wrapper) and issubclass(wrapper, Message):
+        if hasattr(wrapper, 'to_python'):
             wrapper = wrapper.to_python
         return wrapper(
             self._resource.post_xml(path, body, headers, **params)[2]
         )
 
     def sign(self, message):
+        """Signs :class:`~phox.messages.Message` instance by setting session id
+        to header information.
+        """
         if isinstance(message, Message):
             message.sessionid = self.id
         elif isinstance(message, xml.ElementType):
@@ -167,49 +164,22 @@ class Session(object):
         """Closes current active session."""
         assert self.is_active(), 'Session has not been activated.'
         self.request(body=PhoxRequest(type='logout'))
-        self._resmsg = auth.AuthResponse()
+        self._userctx = AuthResponse()
         return True
 
     def is_active(self):
         """Returns state of current session."""
         return bool(self.id)
 
-    @property
-    def id(self):
+    def _get_id(self):
         """Session id number."""
-        return self._resmsg.sessionid or None
+        return self._userctx.sessionid or None
+
+    def _set_id(self, value):
+        self._userctx.sessionid = value
+
+    id = property(_get_id, _set_id)
 
     @property
-    def departments(self):
-        """List of department references which user is belong to."""
-        return list(self._resmsg.departments)
-
-    @property
-    def hospitals(self):
-        """List of hospital references which user is belong to."""
-        return list(self._resmsg.hospitals)
-
-    @property
-    def employee(self):
-        """Reference to Employee object."""
-        return self._resmsg.employee
-
-    @property
-    def rights(self):
-        """List of references to active permissions."""
-        return list(self._resmsg.rights)
-
-    @property
-    def code(self):
-        """Session code number."""
-        return self._resmsg.session_code
-
-    @property
-    def server_version(self):
-        """Server version string."""
-        return self._resmsg.server_version
-
-    @property
-    def admin_mode(self):
-        """Flag of admin mode usage."""
-        return bool(self._resmsg.admin_mode)
+    def userctx(self):
+        return self._userctx.unwrap()

@@ -18,12 +18,13 @@ class SessionTestCase(unittest.TestCase):
         self.server = SimpleLISServer('4.2', '31415')
         self.server.ext_auth.add_license('foo-bar-baz')
         self.server.ext_auth.add_user('John', 'Doe')
+        self.http_session = MockHttpSession(self.server)
 
     def test_login(self):
         session = client.Session(login='John', password='Doe',
                                  client_id='foo-bar-baz')
         self.assertFalse(session.is_active())
-        session.open('localhost', http_session=MockHttpSession(self.server))
+        session.open('localhost', http_session=self.http_session)
         self.assertTrue(session.is_active())
 
     def test_secure_login(self):
@@ -31,14 +32,14 @@ class SessionTestCase(unittest.TestCase):
         session = client.Session(login='Foo', password='Bar',
                                  client_id='foo-bar-baz', secure=True)
         self.assertFalse(session.is_active())
-        session.open('localhost', http_session=MockHttpSession(self.server))
+        session.open('localhost', http_session=self.http_session)
         self.assertTrue(session.is_active())
 
     def test_logout(self):
         session = client.Session(login='John', password='Doe',
                                  client_id='foo-bar-baz')
         self.assertFalse(session.is_active())
-        session.open('localhost', http_session=MockHttpSession(self.server))
+        session.open('localhost', http_session=self.http_session)
         self.assertTrue(session.is_active())
         session.close()
         self.assertFalse(session.is_active())
