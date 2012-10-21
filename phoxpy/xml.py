@@ -36,6 +36,11 @@ _TAGS_BY_TYPE = {}
 _TAGS_BY_PYTYPE = {}
 
 def register_tag(tag, *pytypes):
+    """Registers new XML element codec.
+
+    :param tag: :class:`~phoxpy.xmlcodec.Tag` class or his subclass
+    :param pytypes: Python types which will be associated with.
+    """
     tag = tag()
     if tag.tagname not in _TAGS:
         _TAGS[tag.tagname] = tag
@@ -99,6 +104,14 @@ def decode(xmlsrc):
         return obj
 
 def decode_stream(stream):
+    """Decodes elements of xml stream.
+
+    :param stream: XML parser's stream which emits pair of
+                   event and :class:`~phoxpy.xml.Element` instances.
+    :type: generator
+
+    :yields: Decoded value.
+    """
     for event, elem in stream:
         yield decode_elem(stream, elem)
         if event == 'end':
@@ -108,6 +121,19 @@ def decode_stream(stream):
             del elem
 
 def decode_elem(stream, elem):
+    """Decodes single XML element by calling his decoding handler.
+
+    :param stream: XML parser's stream which emits pair of
+                   event and :class:`~phoxpy.Element` instances.
+    :type stream: generator
+
+    :param elem: XML element instance to process.
+    :type elem: :class:`~phoxpy.xml.Element
+
+    :return: Decoded value
+
+    :raises: :exc:`ValueError` if no decoders available for passed `elem`.
+    """
     if 't' in elem.attrib and elem.attrib['t'] in _TAGS_BY_TYPE:
         value = _TAGS_BY_TYPE[elem.attrib['t']].decode(decode_elem, stream, elem)
     elif elem.tag in _TAGS:
@@ -165,6 +191,18 @@ def encode(obj, **attrs):
     return encode_elem(None, obj, **attrs)
 
 def encode_elem(name, obj, **attrs):
+    """Encodes Python object to XML element with `name` and custom `attrs` as
+    attributes.
+
+    :param name: XML element `name`. If element should be nonames
+                 (e.g. items of lists) ``None`` value should be explicitly
+                 passed.
+    :type name: unicode
+
+    :param obj: Python object of any type.
+
+    :param attrs: Key-value mapping for custom XML element attributes.
+    """
     def get_type_rating(tval, cls, score=10):
         if tval is cls:
             return score
