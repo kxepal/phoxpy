@@ -20,7 +20,7 @@ from phoxpy.xmlcodec import Attribute, Reference
 
 __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
            'TextField', 'DateTimeField', 'RefField', 'ListField', 'ObjectField',
-           'Mapping', 'MappingTag']
+           'Mapping']
 
 class MetaField(type):
 
