@@ -10,10 +10,11 @@
 import time
 from phoxpy.xmlcodec import DirectoryResponseCodec
 from phoxpy.mapping import Mapping
-from phoxpy.messages.directory import \
-    DirectoryLoad, DirectorySave, DirectorySaveNew, \
-    DirectoryRemove, DirectoryRemoveNew, DirectoryRestore, \
+from phoxpy.messages.directory import (
+    DirectoryLoad, DirectorySave, DirectorySaveNew,
+    DirectoryRemove, DirectoryRemoveNew, DirectoryRestore,
     DirectoryVersions
+)
 
 __all__ = ['DIRS_FOR_NEW_PROC', 'items', 'load', 'store', 'remove', 'restore']
 
