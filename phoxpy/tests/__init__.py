@@ -19,10 +19,14 @@ def suite():
             name = file.split('.')[0]
             modname = os.path.join(root, name).replace(os.path.sep, '.')
             modname = modname.lstrip('.')
-            tests = unittest.defaultTestLoader.loadTestsFromName(modname)
-            for test in tests:
-                suite.addTests(test)
-            print modname, ':', tests.countTestCases(), 'tests'
+            try:
+                tests = unittest.defaultTestLoader.loadTestsFromName(modname)
+            except Exception, err:
+                print modname, ':', type(err), err
+            else:
+                for test in tests:
+                    suite.addTests(test)
+                print modname, ':', tests.countTestCases(), 'tests'
     return suite
 
 
