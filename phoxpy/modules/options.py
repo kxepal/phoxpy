@@ -7,7 +7,7 @@
 # you should have received as part of this distribution.
 #
 
-from phoxpy.messages.options import OptionsGet
+from phoxpy.messages import PhoxRequest
 
 __all__ = ['load']
 
@@ -20,7 +20,7 @@ def load(session):
     :return: Config options as is.
     :rtype: dict
     """
-    resp = session.request(body=OptionsGet())
+    resp = session.request(body=PhoxRequest(type='options-get'))
     config = {}
     for item in resp['']: # unnamed sequence
         config[item['code']] = item['value']
