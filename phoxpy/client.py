@@ -12,7 +12,7 @@ import phoxpy.xmlcodec # TODO: import recursion WHY?
 from phoxpy import http
 from phoxpy import xml
 from phoxpy.messages import Message, PhoxRequest, PhoxResponse
-from phoxpy.messages.auth import AuthRequest, AuthResponse
+from phoxpy.scheme.auth import AuthRequest, AuthResponse
 
 __all__ = ['PhoxResource', 'Session']
 
@@ -99,6 +99,7 @@ class Session(object):
                                         password=password,
                                         client_id=client_id,
                                         **data)
+        self._id = None
         self._userctx = AuthResponse()
         self._resource = None
 
@@ -114,8 +115,10 @@ class Session(object):
         :return: self
         """
         self._resource = PhoxResource(url, session=http_session)
-        self._userctx = self.request(body=self._credentials,
-                                     wrapper=AuthResponse)
+        self._userctx = self.request(
+            body=self._credentials.to_message(type='login'),
+            wrapper=AuthResponse)
+        self._id = self._userctx['sessionid']
         return self
 
     def request(self, path='', body=None, headers=None, wrapper=None, **params):
@@ -165,6 +168,7 @@ class Session(object):
         assert self.is_active(), 'Session has not been activated.'
         self.request(body=PhoxRequest(type='logout'))
         self._userctx = AuthResponse()
+        self._id = None
         return True
 
     def is_active(self):
@@ -173,10 +177,10 @@ class Session(object):
 
     def _get_id(self):
         """Session id number."""
-        return self._userctx.sessionid or None
+        return self._id
 
     def _set_id(self, value):
-        self._userctx.sessionid = value
+        self._id = value
 
     id = property(_get_id, _set_id)
 

@@ -7,10 +7,11 @@
 # you should have received as part of this distribution.
 #
 
-from phoxpy.mapping import BooleanField, DateTimeField, IntegerField, \
-                           ListField, LongField, Mapping, ObjectField, \
-                           RefField, TextField
-from phoxpy.messages import Message, PhoxRequest
+from phoxpy.mapping import (
+    BooleanField, DateTimeField, IntegerField, ListField, LongField, Mapping,
+    ObjectField, RefField, TextField
+)
+from phoxpy.messages import PhoxRequestContent
 
 
 class RegistrationJournalFilter(Mapping):
@@ -54,6 +55,5 @@ class RegistrationJournalFilter(Mapping):
     ))
 
 
-class RegistrationJournalRequest(PhoxRequest, 'registration-journal'):
-    class Content(Message.Content):
-        filter = ObjectField(RegistrationJournalFilter)
+class RegistrationJournalRequest(PhoxRequestContent):
+    filter = ObjectField(RegistrationJournalFilter)

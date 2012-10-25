@@ -8,11 +8,12 @@
 #
 
 import time
-from phoxpy.messages.requests import RequestInfo, RequestSamples
-from phoxpy.messages.journal import RegistrationJournalFilter, \
-                                    RegistrationJournalRequest
+from phoxpy.messages import PhoxRequest
+from phoxpy.scheme.requests import RequestInfo, RequestSamples
 
-__all__ = ['load', 'select', 'changes']
+
+__all__ = ['load', 'select', 'changes', 'samples']
+
 
 def load(session, idx):
     """Loads request information by provided id.
@@ -26,7 +27,7 @@ def load(session, idx):
     :returns: Request information.
     :rtype: dict
     """
-    msg = RequestInfo(request=idx)
+    msg = RequestInfo(request=idx).to_message(type='request-info')
     resp = session.request(body=msg)
     data = resp.unwrap()
     data.pop('sessionid', None)
@@ -46,13 +47,14 @@ def select(session, filter=None, **options):
                     :class:`~phoxpy.modules.requests.RegistrationJournalFilter`
                     for supported keys.
 
-    :yields: Registration journal rows as dict.
+    :yields: Registration journal rows.
+    :rtype: dict
     """
     if filter is None:
         filter = RegistrationJournalFilter(**options)
     else:
-        filter.update(**options)
-    msg = RegistrationJournalRequest(filter=filter)
+        filter.update(options)
+    msg = RegistrationJournal(filter=filter).to_message(type='registration-journal')
     resp = session.request(body=msg)
     for row in resp['Request']:
         yield row
@@ -69,7 +71,7 @@ def samples(session, idx):
     :yields: Information about samples.
     :rtype: dict
     """
-    msg = RequestSamples(request=idx)
+    msg = RequestSamples(request=idx).to_message(type='request-samples')
     resp = session.request(body=msg)
     for sample in resp['samples']:
         yield sample
@@ -93,5 +95,5 @@ def changes(session,  timestamp=0, timeout=10):
         for item in select(session, last_timestamp=timestamp):
             if timestamp < item['timestamp']:
                 timestamp = item['timestamp']
-            yield item
+                yield item
         time.sleep(timeout)

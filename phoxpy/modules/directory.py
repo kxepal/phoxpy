@@ -10,10 +10,9 @@
 import time
 from phoxpy.xmlcodec import DirectoryResponseCodec
 from phoxpy.mapping import Mapping
-from phoxpy.messages.directory import (
-    DirectoryLoad, DirectorySave, DirectorySaveNew,
-    DirectoryRemove, DirectoryRemoveNew, DirectoryRestore,
-    DirectoryVersions
+from phoxpy.messages import PhoxRequest
+from phoxpy.scheme.directory import (
+    DirectoryLoad, DirectoryRemove, DirectoryRestore, DirectorySave
 )
 
 __all__ = ['DIRS_FOR_NEW_PROC', 'items', 'load', 'store', 'remove', 'restore']
@@ -49,7 +48,7 @@ def items(session):
 
     :yields: 2-element tuple with directory name and his version.
     """
-    resp = session.request(body=DirectoryVersions())
+    resp = session.request(body=PhoxRequest(type='directory-versions'))
     for db in resp['versions']:
         yield db['name'], db['version']
 
@@ -71,8 +70,8 @@ def load(session, name, ids=None, removed=False, _wrapper=DirectoryResponseCodec
     :yields: Directory objects as dict.
     """
     ids = maybe_item_or_ids(ids)
-    resp = session.request(body=DirectoryLoad(name=name, elements=ids),
-                           wrapper=_wrapper)
+    msg = DirectoryLoad(name=name, elements=ids).to_message(type='directory')
+    resp = session.request(body=msg, wrapper=_wrapper)
     for item in resp[name]:
         if not removed and item.get('removed', False):
             continue
@@ -95,17 +94,17 @@ def store(session, name, item):
     :rtype: tuple
     """
     if name in DIRS_FOR_NEW_PROC:
-        messagecls = DirectorySaveNew
+        msgtype = 'directory-save-new'
     else:
-        messagecls = DirectorySave
+        msgtype = 'directory-save'
     if isinstance(item, Mapping):
         item = item.unwrap()
     item.pop('removed', None) # This field could be received by .load()
                               # function, but it shouldn't pass to
-                              # .save() one. Removing it manually is not
+                              # .store() one. Removing it manually is not
                               # very obliviously.
-    message = messagecls(directory=name, element=item)
-    resp = session.request(body=message)
+    msg = DirectorySave(directory=name, element=item).to_message(type=msgtype)
+    resp = session.request(body=msg)
     item['id'] = resp['id']
     return item['id'], resp['version']
 
@@ -126,24 +125,15 @@ def remove(session, name, ids):
     :rtype: str
     """
     ids = maybe_item_or_ids(ids)
+    content = DirectoryRemove(directory=name, ids=ids)
     if name in DIRS_FOR_NEW_PROC:
-        message = DirectoryRemoveNew(directory=name, ids=ids)
-        resp = session.request(body=message)
-        return resp['version']
+        msg = content.to_message(type='directory-remove-new')
+        resp = session.request(body=msg)
+        return resp.content['version']
     else:
-        message = DirectoryRemove(directory=name, ids=ids)
-        # let's say "thanks" for unstructured answer
-        def wrapper(stream):
-            stream.next() # phox-response
-            stream.next() # content
-            event, elem = stream.next()
-            assert event == 'start' and elem.tag == 'f'
-            version = int(elem.attrib['v'])
-            for item in stream: # cleanup
-                pass
-            return version
-        resp = session.request(body=message, wrapper=wrapper)
-        return resp
+        msg = content.to_message(type='directory-remove')
+        resp = session.request(body=msg)
+        return resp['version']
 
 def restore(session, name, ids):
     """Restores removed directory objects.
