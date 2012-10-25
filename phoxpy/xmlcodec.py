@@ -28,7 +28,7 @@ class Reference(unicode):
 
 # resolve import recursion
 from phoxpy.mapping import Mapping
-from phoxpy.messages import Message, PhoxEvent, PhoxRequest, PhoxResponse
+from phoxpy.messages import Content, PhoxEvent, PhoxRequest, PhoxResponse
 
 
 class BaseCodec(object):
@@ -443,7 +443,7 @@ class PhoxEventCodec(PhoxMessageCodec):
 class PhoxErrorCodec(PhoxMessageCodec):
     """Codec for :class:`~phoxpy.messages.PhoxError` messages."""
     __slots__ = ()
-    tagname = 'phox-error'
+    tagname = 'error'
 
     def decode(self, decode, stream, curelem):
         event, elem = stream.next()
@@ -498,7 +498,7 @@ xml.register_codec(DateTimeCodec, datetime.date, datetime.datetime)
 xml.register_codec(ReferenceCodec, Reference)
 xml.register_codec(ListCodec, tuple, list, set, frozenset)
 xml.register_codec(ObjectCodec, dict, Mapping)
-xml.register_codec(ContentCodec, Message.Content)
+xml.register_codec(ContentCodec, Content)
 xml.register_codec(PhoxRequestCodec, PhoxRequest)
 xml.register_codec(PhoxResponseCodec, PhoxResponse)
 xml.register_codec(PhoxEventCodec, PhoxEvent)

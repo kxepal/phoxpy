@@ -13,11 +13,27 @@ from phoxpy.mapping import MetaMapping, Mapping, AttributeField, ObjectField
 __all__ = ['Message', 'PhoxRequest', 'PhoxResponse', 'Content']
 
 
+class Content(Mapping):
+    """Abstract phox message content holder mapping."""
+
+    #: Related :class:`~phox.messages.Message` class.
+    phox_message_cls = None
+
+    def to_message(self, **params):
+        """Wraps content to related :class:`~phox.messages.Message` defined
+        at :class:`~phox.messages.Content.phox_message_cls` attribute.
+
+        :param params: Custom message initialization params.
+
+        :return: :class:`~phox.messages.Content.phox_message_cls` instance.
+        """
+        msg = self.phox_message_cls(**params)
+        msg.content = self
+        return msg
+
+
 class Message(Mapping):
     """Base communication message mapping."""
-
-    class Content(Mapping):
-        """Message content holder mapping."""
 
     #: Unique session id. Sets automatically after successful auth.
     sessionid = AttributeField()
@@ -65,7 +81,6 @@ class MetaPhoxRequest(MetaMapping):
             if key not in cls._fields:
                 content[key] = data.pop(key)
         data['content'] = content
-        cls._fields['content'] = cls.content = ObjectField(cls.Content)
         return super(MetaPhoxRequest, cls).__call__(*args, **data)
 
 
@@ -120,3 +135,17 @@ class PhoxEvent(Message):
     def __str__(self):
         doctype = ('phox-event', 'SYSTEM', 'phox.dtd')
         return xml.dump(self.to_xml(), doctype=doctype)
+
+
+class MessageContent(Mapping):
+    """:class:`~phox.messages.Message` content holder mapping."""
+    phox_message_cls = Message
+
+class PhoxRequestContent(Content):
+    """:class:`~phox.messages.PhoxRequest` content holder mapping."""
+    phox_message_cls = PhoxRequest
+
+
+class PhoxResponseContent(Content):
+    """:class:`~phox.messages.PhoxResponse` content holder mapping."""
+    phox_message_cls = PhoxResponse
