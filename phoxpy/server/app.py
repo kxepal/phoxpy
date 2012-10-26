@@ -14,10 +14,16 @@ app = Flask(__name__)
 
 @app.before_request
 def dispatch():
-    if not request.headers['content_length']:
+    if request.method == 'GET':
+        return
+    clength = request.headers['content_length']
+    if not clength or clength == '0':
         abort(400, 'payload required')
-    message = xml.decode(request.stream)
-    if message.type is None:
+    try:
+        message = xml.decode(request.stream)
+    except Exception, err: # don't care about error
+        abort(500, str(err))
+    if not message.type:
         abort(400, 'message type is missed')
     elif request.path == '/phox':
         for rule in app.url_map.iter_rules():
