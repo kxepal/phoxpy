@@ -125,10 +125,15 @@ class AccessDeny(LisAccessError):
 
 ################################################################################
 
-_EXC_BY_CODE = dict([
-    (cls.code, cls)
-    for cls in LisBaseException.__subclasses__()
-    if cls.code is not None])
+_EXC_BY_CODE = {}
+_stack = [LisBaseException]
+while _stack:
+    current = _stack.pop()
+    for cls in current.__subclasses__():
+        if cls.code is not None:
+            _EXC_BY_CODE[cls.code] = cls
+        _stack.append(cls)
+del _stack
 
 def get_error_class(code):
     return _EXC_BY_CODE.get(code, LisBaseException)

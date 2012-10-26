@@ -10,8 +10,10 @@
 import datetime
 import unittest
 from types import GeneratorType
+from phoxpy import exceptions
 from phoxpy import xml
 from phoxpy import xmlcodec
+
 
 class XMLDecodeTestCase(unittest.TestCase):
 
@@ -123,6 +125,11 @@ class XMLDecodeTestCase(unittest.TestCase):
 
     def test_fail_decode_unknown(self):
         self.assertRaises(ValueError, xml.decode, '<foo/>')
+
+    def test_decode_error(self):
+        self.assertRaises(exceptions.UnknownUser,
+                          xml.decode,
+                          '<error code="500" description="foo"/>')
 
 
 class XMLEncodeTestCase(unittest.TestCase):
@@ -289,6 +296,25 @@ class XMLEncodeTestCase(unittest.TestCase):
         self.assertTrue('id' in elem.attrib)
         self.assertEqual(elem.attrib['id'], 'foo')
 
+    def test_encode_lis_base_exception(self):
+        exc = exceptions.LisBaseException('foobarbaz')
+        exc.code = 123
+        elem = xml.encode(exc)
+        self.assertTrue(isinstance(elem, xml.ElementType))
+        self.assertEqual(elem.tag, 'error')
+        self.assertTrue('code' in elem.attrib)
+        self.assertEqual(elem.attrib['code'], '123')
+        self.assertTrue('description' in elem.attrib)
+        self.assertEqual(elem.attrib['description'], 'foobarbaz')
+
+    def test_encode_some_lis_exception(self):
+        elem = xml.encode(exceptions.UnknownUser('foobarbaz'))
+        self.assertTrue(isinstance(elem, xml.ElementType))
+        self.assertEqual(elem.tag, 'error')
+        self.assertTrue('code' in elem.attrib)
+        self.assertEqual(elem.attrib['code'], '500')
+        self.assertTrue('description' in elem.attrib)
+        self.assertEqual(elem.attrib['description'], 'foobarbaz')
 
 
 if __name__ == '__main__':

@@ -440,8 +440,8 @@ class PhoxEventCodec(PhoxMessageCodec):
     wrapper = PhoxEvent
 
 
-class PhoxErrorCodec(PhoxMessageCodec):
-    """Codec for :class:`~phoxpy.messages.PhoxError` messages."""
+class PhoxErrorCodec(ContentCodec):
+    """Codec for LIS errors and :exc:`~phoxpy.exception.LisBaseException`."""
     __slots__ = ()
     tagname = 'error'
 
@@ -451,6 +451,12 @@ class PhoxErrorCodec(PhoxMessageCodec):
         code = elem.attrib['code']
         descr = elem.attrib.get('description', '')
         raise exceptions.get_error_class(int(code))(descr.encode('utf-8'))
+
+    def encode(self, encode, name, value, **attrs):
+        elem = xml.Element('error')
+        elem.attrib['code'] = value.code and str(value.code) or ''
+        elem.attrib['description'] = value.description or ''
+        return elem
 
 
 class DirectoryResponseCodec(PhoxResponseCodec):
@@ -502,4 +508,4 @@ xml.register_codec(ContentCodec, Content)
 xml.register_codec(PhoxRequestCodec, PhoxRequest)
 xml.register_codec(PhoxResponseCodec, PhoxResponse)
 xml.register_codec(PhoxEventCodec, PhoxEvent)
-xml.register_codec(PhoxErrorCodec, Exception)
+xml.register_codec(PhoxErrorCodec, exceptions.LisBaseException)
