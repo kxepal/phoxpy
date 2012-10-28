@@ -15,25 +15,26 @@ app = Flask(__name__)
 
 @app.before_request
 def dispatch():
-    if request.method == 'GET':
-        return
-
-    clength = request.headers['content_length']
-    if not clength or clength == '0':
-        abort(400, 'payload required')
-
-    try:
-        message = xml.decode(request.stream)
-    except Exception, err: # don't care about error
-        abort(500, str(err))
-
-    if not message.type:
-        abort(400, 'message type is missed')
-
-    if not message.sessionid:
-        raise exceptions.UnknownSession('session id missed')
-
     if request.path == '/phox':
+        if request.method == 'GET':
+            return
+
+        clength = request.headers['content_length']
+        if not clength or clength == '0':
+            abort(400, 'payload required')
+
+        try:
+            message = xml.decode(request.stream)
+        except Exception, err: # don't care about error
+            abort(500, str(err))
+
+        if not message.type:
+            abort(400, 'message type is missed')
+
+        if not message.sessionid:
+            raise exceptions.UnknownSession('session id missed')
+
+
         for rule in app.url_map.iter_rules():
             if rule.rule.endswith(message.type):
                 request.path = rule.rule
@@ -42,8 +43,6 @@ def dispatch():
                 break
         else:
             abort(400, 'unknown type %r' % message.type)
-    else:
-        abort(404)
 
 @app.route('/phox', methods=['GET','POST'])
 def phox():
