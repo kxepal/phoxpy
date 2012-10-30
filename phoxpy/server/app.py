@@ -10,11 +10,11 @@
 from flask import Flask, Response, abort, request
 from phoxpy import xml
 from phoxpy import exceptions
-from phoxpy.messages import PhoxResponse
+from phoxpy.messages import PhoxRequest, PhoxResponse, PhoxEvent
 
 app = Flask(__name__)
 
-def dispatch(message):
+def dispatch_phox_request(message):
     if message.type == 'login':
         raise exceptions.NoContentHandlerError(message.type)
 
@@ -22,6 +22,14 @@ def dispatch(message):
         raise exceptions.NotAuthorized('session id missed')
 
     raise exceptions.NoContentHandlerError(message.type)
+
+def dispatch(message):
+    if isinstance(message, PhoxRequest):
+        return dispatch_phox_request(message)
+    elif isinstance(message, PhoxEvent):
+        raise exceptions.RequestParsingError('not implemented')
+    else:
+        raise exceptions.RequestParsingError('unknown message')
 
 @app.route('/phox', methods=['GET', 'POST'])
 def phox():
