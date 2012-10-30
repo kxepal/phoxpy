@@ -63,6 +63,10 @@ class NoProcessorError(LisRequestError):
     """No processor to handle request. #201"""
     code = 201
 
+class NoContentHandlerError(LisRequestError):
+    """No handler for specified request type. #204"""
+    code = 204
+
 ################################################################################
 # Value errors
 ################################################################################

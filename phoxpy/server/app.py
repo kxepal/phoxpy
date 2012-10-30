@@ -7,46 +7,35 @@
 # you should have received as part of this distribution.
 #
 
-from flask import Flask, request, abort
+from flask import Flask, Response, abort, request
 from phoxpy import xml
 from phoxpy import exceptions
+from phoxpy.messages import PhoxResponse
 
 app = Flask(__name__)
 
-@app.before_request
-def dispatch():
-    if request.path == '/phox':
-        if request.method == 'GET':
-            return
+def dispatch(message):
+    raise exceptions.NoContentHandlerError(message.type)
 
-        clength = request.headers['content_length']
-        if not clength or clength == '0':
-            abort(400, 'payload required')
-
-        try:
-            message = xml.decode(request.stream)
-        except Exception, err: # don't care about error
-            abort(500, str(err))
-
-        if not message.type:
-            abort(400, 'message type is missed')
-
-        if not message.sessionid:
-            raise exceptions.UnknownSession('session id missed')
-
-
-        for rule in app.url_map.iter_rules():
-            if rule.rule.endswith(message.type):
-                request.path = rule.rule
-                request.url_rule = rule
-                request.phoxmsg = message
-                break
-        else:
-            abort(400, 'unknown type %r' % message.type)
-
-@app.route('/phox', methods=['GET','POST'])
+@app.route('/phox', methods=['GET', 'POST'])
 def phox():
-    return '<h1>It works!</h1>'
+    if request.method == 'GET':
+        return '<h1>It works!</h1>'
+
+    try:
+        message = xml.decode(request.stream)
+    except Exception:
+        abort(400)
+
+    if not message.type:
+        abort(400)
+
+    response = dispatch(message)
+
+    response['sessionid'] = message.sessionid
+
+    return Response(str(PhoxResponse(**response)), mimetype='application/xml')
+
 
 @app.errorhandler(exceptions.LisBaseException)
 def handle_lis_error(err):
