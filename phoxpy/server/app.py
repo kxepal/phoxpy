@@ -15,6 +15,12 @@ from phoxpy.messages import PhoxResponse
 app = Flask(__name__)
 
 def dispatch(message):
+    if message.type == 'login':
+        raise exceptions.NoContentHandlerError(message.type)
+
+    if message.sessionid is None:
+        raise exceptions.NotAuthorized('session id missed')
+
     raise exceptions.NoContentHandlerError(message.type)
 
 @app.route('/phox', methods=['GET', 'POST'])

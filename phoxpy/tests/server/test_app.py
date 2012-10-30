@@ -47,9 +47,8 @@ class PhoxpydTestCase(unittest.TestCase):
     def test_return_unknown_session_error_if_session_id_missed(self):
         rv = self.app.post('/phox', data=str(PhoxRequest(type='phox')))
         self.assertEqual(rv.status_code, 200)
-        self.assertRaises(
-            exceptions.NoContentHandlerError,
-            PhoxResponseCodec.to_python, rv.data)
+        self.assertRaises(exceptions.NotAuthorized,
+                          PhoxResponseCodec.to_python, rv.data)
 
 
 if __name__ == '__main__':
