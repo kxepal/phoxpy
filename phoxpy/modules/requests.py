@@ -8,7 +8,7 @@
 #
 
 import time
-from phoxpy.messages import PhoxRequest
+from phoxpy.scheme.journal import RegistrationJournalFilter, RegistrationJournal
 from phoxpy.scheme.requests import RequestInfo, RequestSamples
 
 

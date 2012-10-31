@@ -55,5 +55,5 @@ class RegistrationJournalFilter(Mapping):
     ))
 
 
-class RegistrationJournalRequest(PhoxRequestContent):
+class RegistrationJournal(PhoxRequestContent):
     filter = ObjectField(RegistrationJournalFilter)
