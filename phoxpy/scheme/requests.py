@@ -7,7 +7,7 @@
 # you should have received as part of this distribution.
 #
 
-from phoxpy.mapping import RefField
+from phoxpy.mapping import RefField, ObjectField, Mapping, IntegerField
 from phoxpy.messages import PhoxRequestContent
 
 __all__ = ['RequestInfo', 'RequestSamples']
@@ -22,3 +22,9 @@ class RequestSamples(PhoxRequestContent):
     request = RefField()
 
 
+class PrintRequestOld(PhoxRequestContent):
+    """Content for request type ``print-request-old``."""
+    result = ObjectField(Mapping.build(
+        request=RefField(),
+        format=IntegerField()
+    ))

@@ -8,11 +8,12 @@
 #
 
 import time
+from cStringIO import StringIO
 from phoxpy.scheme.journal import RegistrationJournalFilter, RegistrationJournal
-from phoxpy.scheme.requests import RequestInfo, RequestSamples
+from phoxpy.scheme.requests import RequestInfo, RequestSamples, PrintRequestOld
 
 
-__all__ = ['load', 'select', 'changes', 'samples']
+__all__ = ['load', 'select', 'changes', 'samples', 'report']
 
 
 def load(session, idx):
@@ -97,3 +98,30 @@ def changes(session,  timestamp=0, timeout=10):
                 timestamp = item['timestamp']
                 yield item
         time.sleep(timeout)
+
+def report(session, idx, format='fp3'):
+    """Produces request report as PDF or FastReport prepared template file.
+
+    .. warning:: For LIS print-server only!
+
+    :param session: Active session instance.
+    :type session: :class:`~phoxpy.client.Session`
+
+    :param idx: Request id.
+    :type idx: str
+
+    :param format: Report file format. Possible values are ``fp3`` or ``pdf``.
+    :type format: str
+
+    :return: File-like object.
+    :rtype: :func:`~cStringIO.StringIO`
+    """
+    formats = [None, 'fp3', 'pdf']
+    if format is not None and format in formats:
+        formatid = formats.index(format)
+    else:
+        raise ValueError('unsupported format %s' % format)
+    msg = PrintRequestOld(result={'request': idx, 'format': formatid})
+    msg = msg.to_message(type='print-request-old')
+    resp = session.request(body=msg)
+    return StringIO(resp['base64String'])
