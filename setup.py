@@ -25,7 +25,7 @@ RosLabSystems Laboratory Information System software.""",
     license = 'BSD',
     url = 'http://code.google.com/p/phoxpy/',
 
-    install_requires = ['lxml'],
+    install_requires = ['lxml', 'flask', 'flask-sqlalchemy'],
     test_suite = 'phoxpy.tests',
     zip_safe = True,
 
