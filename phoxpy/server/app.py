@@ -57,7 +57,3 @@ def handle_lis_error(err):
     root = xml.Element('phox-response')
     root.append(error)
     return xml.dump(root)
-
-if __name__ == '__main__':
-    app.debug = True
-    app.run()
