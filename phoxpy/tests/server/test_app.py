@@ -7,17 +7,12 @@
 # you should have received as part of this distribution.
 #
 
-import unittest
-import phoxpy.server.app as phoxpyd
+from . import PhoxpydTestCase
 from phoxpy import exceptions
 from phoxpy.messages import PhoxRequest
 from phoxpy.xmlcodec import PhoxResponseCodec
 
-class PhoxpydTestCase(unittest.TestCase):
-
-    def setUp(self):
-        phoxpyd.app.config['TESTING'] = True
-        self.app = phoxpyd.app.test_client()
+class CommonTestCase(PhoxpydTestCase):
 
     def test_get_phox(self):
         rv = self.app.get('/phox')
@@ -49,7 +44,3 @@ class PhoxpydTestCase(unittest.TestCase):
         self.assertEqual(rv.status_code, 200)
         self.assertRaises(exceptions.NotAuthorized,
                           PhoxResponseCodec.to_python, rv.data)
-
-
-if __name__ == '__main__':
-    unittest.main()
