@@ -116,7 +116,11 @@ class PhoxResponse(Message):
         return xml.dump(self.to_xml(), doctype=doctype)
 
     def unwrap(self):
-        return super(PhoxResponse, self).unwrap()[None].unwrap()
+        resp = super(PhoxResponse, self).unwrap()
+        for key in [None, 'content']:
+            if key in resp:
+                return resp[key].unwrap()
+        raise ValueError('unknown content wrapper for response\n%s' % resp)
 
 
 class PhoxEvent(Message):
