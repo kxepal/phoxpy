@@ -11,8 +11,8 @@ import hashlib
 import phoxpy.xmlcodec # TODO: import recursion WHY?
 from phoxpy import http
 from phoxpy import xml
-from phoxpy.messages import Message, PhoxRequest, PhoxResponse
-from phoxpy.scheme.auth import AuthRequest, AuthResponse
+from phoxpy.messages import Message, PhoxResponse
+from phoxpy.modules.auth import login, logout, AuthRequest, AuthResponse
 
 __all__ = ['PhoxResource', 'Session']
 
@@ -99,7 +99,6 @@ class Session(object):
                                         password=password,
                                         client_id=client_id,
                                         **data)
-        self._id = None
         self._userctx = AuthResponse()
         self._resource = None
 
@@ -114,12 +113,15 @@ class Session(object):
 
         :return: self
         """
+        self.bind_resource(url, http_session)
+        login(self)
+
+    def close(self):
+        """Closes current active session."""
+        logout(self)
+
+    def bind_resource(self, url, http_session=None):
         self._resource = PhoxResource(url, session=http_session)
-        self._userctx = self.request(
-            body=self._credentials.to_message(type='login'),
-            wrapper=AuthResponse)
-        self._id = self._userctx['sessionid']
-        return self
 
     def request(self, path='', body=None, headers=None, wrapper=None, **params):
         """Makes single request to server.
@@ -156,6 +158,8 @@ class Session(object):
         """Signs :class:`~phox.messages.Message` instance by setting session id
         to header information.
         """
+        if self.id is None:
+            return
         if isinstance(message, Message):
             message.sessionid = self.id
         elif isinstance(message, xml.ElementType):
@@ -163,27 +167,44 @@ class Session(object):
         elif message is not None:
             raise TypeError('Invalid message %r' % message)
 
-    def close(self):
-        """Closes current active session."""
-        assert self.is_active(), 'Session has not been activated.'
-        self.request(body=PhoxRequest(type='logout'))
-        self._userctx = AuthResponse()
-        self._id = None
-        return True
-
     def is_active(self):
         """Returns state of current session."""
-        return bool(self.id)
+        return self.id is not None
+
+    def _get_credentials(self):
+        return self._credentials.unwrap()
+
+    def _set_credentials(self, value):
+        if isinstance(value, AuthRequest):
+            self._userctx = value
+        else:
+            self._userctx = AuthRequest(**value)
+
+    credentials = property(_get_credentials, _set_credentials)
 
     def _get_id(self):
         """Session id number."""
-        return self._id
+        return self._userctx.get('sessionid')
 
     def _set_id(self, value):
-        self._id = value
+        self._userctx['sessionid'] = value
 
     id = property(_get_id, _set_id)
 
-    @property
-    def userctx(self):
+    def _get_userctx(self):
         return self._userctx.unwrap()
+
+    def _set_userctx(self, value):
+        if isinstance(value, AuthResponse):
+            self._userctx = value
+        else:
+            self._userctx = AuthResponse(**value)
+
+    userctx = property(_get_userctx, _set_userctx)
+
+
+def open(url, *args, **credentials):
+    """Returns initialized and authorized :class:`Session` instance."""
+    session = Session(*args, **credentials)
+    login(session, url)
+    return session

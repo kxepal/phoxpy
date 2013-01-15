@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2011 Alexander Shorin
+# Copyright (C) 2013 Alexander Shorin
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -8,12 +8,13 @@
 #
 
 from random import randint
+from phoxpy.messages import PhoxRequest
 from phoxpy.messages import  PhoxRequestContent, PhoxResponseContent
 from phoxpy.mapping import (
     BooleanField, IntegerField, ListField, LongField, RefField, TextField
 )
 
-__all__ = ['AuthRequest', 'AuthResponse']
+__all__ = ['AuthRequest', 'AuthResponse', 'login', 'logout']
 
 
 class AuthRequest(PhoxRequestContent):
@@ -56,3 +57,33 @@ class AuthResponse(PhoxResponseContent):
     #: Session code number.
     session_code = LongField(name='sessionCode')
 
+
+def login(session, url=None):
+    """Provides authentication for specified `session` instance.
+
+    :param session: Session instance.
+    :type session: :class:`~phoxpy.client.Session`
+
+    :param url: Custom server url. May be used to override `session` bounded
+                one.
+    :type url: str
+
+    :return: Assigned session id number.
+    """
+    if url:
+        session.bind_resource(url)
+    session._userctx = session.request(
+        body=session._credentials.to_message(type='login'),
+        wrapper=AuthResponse)
+    return session.id
+
+
+def logout(session):
+    """Closes session.
+
+    :param session: Active session instance.
+    :type session: :class:`~phoxpy.client.Session`
+    """
+    assert session.is_active(), 'Session is not activated.'
+    session.request(body=PhoxRequest(type='logout'))
+    session.userctx = AuthResponse()
