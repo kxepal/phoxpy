@@ -9,13 +9,51 @@
 
 import time
 from phoxpy.xmlcodec import DirectoryResponseCodec
-from phoxpy.mapping import Mapping
-from phoxpy.messages import PhoxRequest
-from phoxpy.scheme.directory import (
-    DirectoryLoad, DirectoryRemove, DirectoryRestore, DirectorySave
+from phoxpy.mapping import (
+    Mapping, ObjectField, ListField, RefField, TextField, AttributeField
 )
+from phoxpy.messages import PhoxRequest, PhoxRequestContent
 
-__all__ = ['DIRS_FOR_NEW_PROC', 'items', 'load', 'store', 'remove', 'restore']
+__all__ = ['DIRS_FOR_NEW_PROC',
+           'items', 'load', 'store', 'remove', 'restore',
+           'DirectoryLoad', 'DirectorySave', 'DirectorySaveNew',
+           'DirectoryRemove', 'DirectoryRemoveNew', 'DirectoryRestore']
+
+class DirectoryLoad(PhoxRequestContent):
+    """Content for request type ``directory``."""
+
+    #: Directory data source name.
+    name = TextField()
+    #: List of object ids. If None all of them will be requests.
+    elements = ListField(RefField())
+
+
+class DirectorySave(PhoxRequestContent):
+    """Content for request type ``directory-save``."""
+
+    #: Directory data source name.
+    directory = TextField()
+    #: Directory element to save.
+    element = ObjectField(Mapping.build(id=AttributeField()))
+
+
+class DirectoryRemove(PhoxRequestContent):
+    """Content for request type ``directory-remove``."""
+
+    #: Directory data source name.
+    directory = TextField()
+    #: List of object ids to remove.
+    ids = ListField(RefField())
+
+
+class DirectoryRestore(PhoxRequestContent):
+    """Content for request type ``directory-restore``."""
+
+    #: Directory data source name.
+    directory = TextField()
+    #: List of object ids to restore.
+    ids = ListField(RefField())
+
 
 #: List of directory names to which new directory message format should be
 #: applied.
