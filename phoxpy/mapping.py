@@ -12,11 +12,11 @@
 """Mapping to strict XML data scheme and help to decode it to Python objects
 and encode vice versa."""
 
-from itertools import islice
 import copy
 import datetime
-from phoxpy import xml
-from phoxpy.xmlcodec import Attribute, Reference
+from itertools import islice
+from . import xml
+from .xmlobjects import Attribute, Reference
 
 __all__ = ['Field', 'BooleanField', 'IntegerField', 'LongField', 'FloatField',
            'TextField', 'DateTimeField', 'RefField', 'ListField', 'ObjectField',

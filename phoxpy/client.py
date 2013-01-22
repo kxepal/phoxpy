@@ -8,13 +8,12 @@
 #
 
 import hashlib
-import phoxpy.xmlcodec # TODO: import recursion WHY?
-from phoxpy import http
-from phoxpy import xml
-from phoxpy.messages import Message, PhoxResponse
-from phoxpy.modules.auth import login, logout, AuthRequest, AuthResponse
+from . import http
+from . import xml
+from .messages import Message, PhoxResponse
+from .modules.auth import login, logout, AuthRequest, AuthResponse
 
-__all__ = ['PhoxResource', 'Session']
+__all__ = ['PhoxResource', 'Session', 'open']
 
 md5 = lambda s: hashlib.md5(s).hexdigest()
 

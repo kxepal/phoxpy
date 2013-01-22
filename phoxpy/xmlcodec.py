@@ -9,26 +9,12 @@
 """XML decoder/encoder for phox.dtd schema."""
 
 import datetime
-from phoxpy import exceptions
-from phoxpy import xml
 from types import GeneratorType
-
-__all__ = ['Attribute', 'Reference', 'Decoder', 'Encoder',
-           'PhoxDecoder', 'PhoxEncoder']
-
-class Attribute(unicode):
-    """Sentinel unicode value that marks value to help serialize it back to
-    XML attribute."""
-
-
-class Reference(unicode):
-    """Sentinel unicode value that marks value for RefField to help serialize it
-    back to XML without losing information about their kind."""
-
-
-# resolve import recursion
-from phoxpy.mapping import Mapping
-from phoxpy.messages import Content, PhoxEvent, PhoxRequest, PhoxResponse
+from . import exceptions
+from . import xml
+from .mapping import Mapping
+from .messages import Content, PhoxEvent, PhoxRequest, PhoxResponse
+from .xmlobjects import Attribute, Reference
 
 
 class BaseCodec(object):
